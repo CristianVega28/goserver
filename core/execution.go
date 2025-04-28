@@ -16,26 +16,18 @@ import (
 
 type (
 	Execution struct {
-		Args   []string
-		path   string
-		port   string
-		mode   string
-		File   File
-		Server *server.Server
+		Args    []string
+		path    string
+		port    string
+		mode    string
+		Restart chan bool
+		File    File
+		Server  *server.Server
 	}
 )
 
 func (exec *Execution) WatcherFile() {
 	watcher, err := fsnotify.NewWatcher()
-	data, errorExtractData := exec.File.ExtractData("./api/api.json")
-
-	if errorExtractData != nil {
-		log.Error().Msg(errorExtractData.Error())
-	}
-
-	if err != nil {
-		fmt.Println(err.Error())
-	}
 
 	watcher.Add("./api")
 	log.Info().Msg("Creando la gorutine")
@@ -52,16 +44,11 @@ func (exec *Execution) WatcherFile() {
 
 				if event.Has(fsnotify.Write) {
 					fmt.Println("modified file:", event.Op.String())
-					// exec.Server.Close()
+					exec.Restart <- true
 
-					// time.Sleep(time.Millisecond * 500)
-					// p, err := os.FindProcess(os.Getpid())
-					// if err != nil {
-					// 	panic(err)
-					// }
+					// data, _ := exec.File.ExtractData("./api/api.json")
+					// exec.Server.GenrateServer(data)
 
-					// // Enviar señal SIGINT (lo mismo que Ctrl+C)
-					// p.Signal(os.Interrupt) // o syscall.SIGINT, es equivalente
 				}
 
 			case err, ok := <-watcher.Errors:
@@ -70,10 +57,37 @@ func (exec *Execution) WatcherFile() {
 				}
 
 				fmt.Println("error: ", err)
+
+			case <-exec.Restart:
+				exec.Server.Close()
+
+				data, errorExtractData := exec.File.ExtractData("./api/api.json")
+
+				if errorExtractData != nil {
+					log.Error().Msg(errorExtractData.Error())
+				}
+
+				time.Sleep(1 * time.Second)
+				prevServer := server.Server{}
+				srv := prevServer.NewServer()
+
+				exec.Server = &srv
+
+				exec.Server.GenrateServer(data)
+
 			}
 		}
 	}()
 
+	data, errorExtractData := exec.File.ExtractData("./api/api.json")
+
+	if errorExtractData != nil {
+		log.Error().Msg(errorExtractData.Error())
+	}
+
+	if err != nil {
+		fmt.Println(err.Error())
+	}
 	exec.Server.GenrateServer(data)
 }
 
@@ -128,7 +142,7 @@ func (exec *Execution) GetMode() bool {
 func (exec *Execution) Run() {
 	if exec.GetMode() {
 		fmt.Println("Modo watcher")
-		exec.WatcherFile()
+		go exec.WatcherFile()
 	} else {
 		exec.StaticFile()
 	}

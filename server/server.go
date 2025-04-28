@@ -1,12 +1,8 @@
 package server
 
 import (
-	"context"
 	"fmt"
 	"net/http"
-	"os"
-	"os/signal"
-	"time"
 
 	"github.com/CristianVega28/goserver/helpers"
 	"github.com/rs/zerolog/log"
@@ -43,22 +39,19 @@ func (server *Server) Up(serverVar *http.Server) {
 }
 
 func (server *Server) Close() {
-	stop := make(chan os.Signal, 1)
-	signal.Notify(stop, os.Interrupt)
-
-	<-stop // Bloquea hasta recibir la señal
 
 	fmt.Println("\nApagando servidor...")
 
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
+	// ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	// defer cancel()
 
-	if err := server.srv.Shutdown(ctx); err != nil {
+	if err := server.srv.Close(); err != nil {
 		fmt.Printf("Error cerrando servidor: %s\n", err)
 	} else {
 		fmt.Println("Servidor cerrado correctamente.")
 	}
 
+	fmt.Println("Reiniciando servidor...")
 }
 
 func (server *Server) GenrateServer(data map[string]any) {

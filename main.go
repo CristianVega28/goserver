@@ -15,15 +15,17 @@ func main() {
 
 	prevServer := server.Server{}
 	srv := prevServer.NewServer()
+	restart := make(chan bool, 1)
 
 	exec := core.Execution{
-		Args:   os.Args,
-		File:   core.File{},
-		Server: &srv,
+		Args:    os.Args,
+		File:    core.File{},
+		Server:  &srv,
+		Restart: restart,
 	}
 
 	exec.ParserArg()
-	// var isEvent bool = exec.GetMode()
+	var isEvent bool = exec.GetMode()
 
 	exec.Run()
 
@@ -31,9 +33,8 @@ func main() {
 	log.Logger = zerolog.New(output).With().Timestamp().Logger()
 
 	// log.Debug().Msg("args " + strings.Join(os.Args, ""))
-	log.Info().Msg("Starting server...")
 
-	// if isEvent {
-	// 	select {}
-	// }
+	if isEvent {
+		select {}
+	}
 }
