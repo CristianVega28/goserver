@@ -25,7 +25,7 @@ func main() {
 	}
 
 	exec.ParserArg()
-	var isEvent bool = exec.GetMode()
+	// var isEvent bool = exec.GetMode()
 
 	exec.Run()
 
@@ -34,7 +34,7 @@ func main() {
 
 	// log.Debug().Msg("args " + strings.Join(os.Args, ""))
 
-	if isEvent {
-		select {}
-	}
+	// if isEvent {
+	// 	select {}
+	// }
 }

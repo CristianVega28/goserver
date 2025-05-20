@@ -2,14 +2,12 @@ package core
 
 import (
 	"fmt"
-	"os"
 	"regexp"
 	"strings"
 	"time"
 
 	"github.com/CristianVega28/goserver/server"
 	"github.com/fsnotify/fsnotify"
-	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 	"github.com/samber/lo"
 )
@@ -98,37 +96,40 @@ func (exec *Execution) StaticFile() {
 		log.Error().Msg(errorExtractData.Error())
 	}
 
+	exec.Server.Srv.Addr = exec.port
 	exec.Server.GenrateServer(data)
 }
 
 func (exec *Execution) ParserArg() {
 	rex := regexp.MustCompile(`--\w+=\S+`)
+	fmt.Println(exec.Args)
+	fmt.Println(len(exec.Args))
 	matches := rex.FindAllString(strings.Join(exec.Args, " "), -1)
-
 	lo.ForEach(matches, func(item string, key int) {
 		splitted := strings.Split(item, "=")
 		fmt.Println(splitted)
 		if len(splitted) == 2 {
 			switch splitted[0] {
 			case "--port":
-				exec.port = splitted[1]
+				exec.port = fmt.Sprintf(":%s", splitted[1])
 			case "--path":
 				exec.path = splitted[1]
 			case "--mode":
 				exec.mode = splitted[1]
-			default:
-				exec.mode = "watch"
-				exec.path = "./api/api.json"
-				exec.port = ":8000"
+
 			}
 		}
 	})
 
-	output := zerolog.ConsoleWriter{Out: os.Stdout, TimeFormat: time.RFC3339}
-	log.Logger = zerolog.New(output).With().Timestamp().Logger()
-	log.Info().Msg("args " + fmt.Sprintf("%v", exec.path))
-	log.Info().Msg("args " + fmt.Sprintf("%v", exec.mode))
-	log.Info().Msg("args " + fmt.Sprintf("%v", exec.port))
+	if exec.port == "" {
+		exec.port = ":8000"
+	}
+	if exec.path == "" {
+		exec.path = "./api/api.json"
+	}
+	if exec.mode == "" {
+		exec.mode = "static"
+	}
 }
 
 func validateArg(arg string, keyword string) bool {

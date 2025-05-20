@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"net/http"
 
+	"github.com/CristianVega28/goserver/core/middleware"
 	"github.com/CristianVega28/goserver/helpers"
 	"github.com/rs/zerolog/log"
 )
@@ -11,20 +12,14 @@ import (
 type (
 	Server struct {
 		mux *http.ServeMux
-		srv http.Server
+		Srv http.Server
 	}
-)
-
-const (
-	serverPort = ":8000"
 )
 
 func (server *Server) NewServer() Server {
 	return Server{
 		mux: http.NewServeMux(),
-		srv: http.Server{
-			Addr: serverPort,
-		},
+		Srv: http.Server{},
 	}
 }
 
@@ -45,7 +40,7 @@ func (server *Server) Close() {
 	// ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	// defer cancel()
 
-	if err := server.srv.Close(); err != nil {
+	if err := server.Srv.Close(); err != nil {
 		fmt.Printf("Error cerrando servidor: %s\n", err)
 	} else {
 		fmt.Println("Servidor cerrado correctamente.")
@@ -60,11 +55,10 @@ func (server *Server) GenrateServer(data map[string]any) {
 
 	if len(data) != 0 {
 		for key, value := range data {
-			log.Info().Msg("Endpoint: " + key + " and Value: " + fmt.Sprintf("%v", value))
-			server.mux.HandleFunc("/"+key, func(w http.ResponseWriter, r *http.Request) {
+			server.mux.HandleFunc("/"+key, middleware.Logging(func(w http.ResponseWriter, r *http.Request) {
 				response := helpers.Response{}
 				response.ResponseJson(w, value, http.StatusOK)
-			})
+			}))
 		}
 	}
 	server.mux.HandleFunc("/up", func(w http.ResponseWriter, r *http.Request) {
@@ -74,8 +68,7 @@ func (server *Server) GenrateServer(data map[string]any) {
 		}, http.StatusAccepted)
 	})
 
-	server.srv.Handler = server.mux
+	server.Srv.Handler = server.mux
 
-	log.Info().Msg("server: " + "http://localhost" + serverPort)
-	server.srv.ListenAndServe()
+	server.Srv.ListenAndServe()
 }
