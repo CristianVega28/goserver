@@ -14,13 +14,14 @@ import (
 
 type (
 	Execution struct {
-		Args    []string
-		path    string
-		port    string
-		mode    string
-		Restart chan bool
-		File    File
-		Server  *server.Server
+		Args          []string
+		path          string
+		port          string
+		mode          string
+		Restart       chan bool
+		File          File
+		Server        *server.Server
+		MapMiddleware server.MapMiddleware
 	}
 )
 

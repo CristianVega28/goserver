@@ -2,13 +2,10 @@ package main
 
 import (
 	"os"
-	"time"
 
 	"github.com/CristianVega28/goserver/core"
+	"github.com/CristianVega28/goserver/core/models"
 	"github.com/CristianVega28/goserver/server"
-
-	"github.com/rs/zerolog"
-	"github.com/rs/zerolog/log"
 )
 
 func main() {
@@ -18,23 +15,19 @@ func main() {
 	restart := make(chan bool, 1)
 
 	exec := core.Execution{
-		Args:    os.Args,
-		File:    core.File{},
-		Server:  &srv,
-		Restart: restart,
+		Args:          os.Args,
+		File:          core.File{},
+		Server:        &srv,
+		Restart:       restart,
+		MapMiddleware: server.CreateMapMiddleware(),
 	}
 
 	exec.ParserArg()
 	// var isEvent bool = exec.GetMode()
 
+	var modelsvar models.Models = models.Models{}
+	modelsvar.Init()
+	models.Migration()
 	exec.Run()
 
-	output := zerolog.ConsoleWriter{Out: os.Stdout, TimeFormat: time.RFC3339}
-	log.Logger = zerolog.New(output).With().Timestamp().Logger()
-
-	// log.Debug().Msg("args " + strings.Join(os.Args, ""))
-
-	// if isEvent {
-	// 	select {}
-	// }
 }
