@@ -15,7 +15,6 @@ type (
 		Args          []string
 		path          string
 		port          string
-		mode          string
 		File          File
 		Server        *server.Server
 		MapMiddleware server.MapMiddleware
@@ -35,8 +34,6 @@ func (exec *Execution) Run() {
 
 func (exec *Execution) ParserArg() {
 	rex := regexp.MustCompile(`--\w+=\S+`)
-	fmt.Println(exec.Args)
-	fmt.Println(len(exec.Args))
 	matches := rex.FindAllString(strings.Join(exec.Args, " "), -1)
 	lo.ForEach(matches, func(item string, key int) {
 		splitted := strings.Split(item, "=")
@@ -47,20 +44,8 @@ func (exec *Execution) ParserArg() {
 				exec.port = fmt.Sprintf(":%s", splitted[1])
 			case "--path":
 				exec.path = splitted[1]
-			case "--mode":
-				exec.mode = splitted[1]
 
 			}
 		}
 	})
-
-	if exec.port == "" {
-		exec.port = ":8000"
-	}
-	if exec.path == "" {
-		exec.path = "./api/api.json"
-	}
-	if exec.mode == "" {
-		exec.mode = "static"
-	}
 }

@@ -27,6 +27,5 @@ func main() {
 	// modelsvar.Init()
 	// models.Migration()
 	exec.Run()
-	select {}
 
 }

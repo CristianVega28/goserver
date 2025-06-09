@@ -2,6 +2,7 @@ package core
 
 import (
 	"encoding/json"
+	"fmt"
 	"os"
 	"path/filepath"
 
@@ -42,6 +43,7 @@ func (file *File) ExtractData(path string) (map[string]any, error) {
 		}
 	}
 
+	fmt.Println(object)
 	return object, nil
 
 }
