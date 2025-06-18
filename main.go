@@ -1,7 +1,12 @@
 package main
 
 import (
+	"context"
+	"log"
 	"os"
+	"os/signal"
+	"syscall"
+	"time"
 
 	"github.com/CristianVega28/goserver/core"
 	"github.com/CristianVega28/goserver/server"
@@ -26,6 +31,24 @@ func main() {
 	// var modelsvar models.Models = models.Models{}
 	// modelsvar.Init()
 	// models.Migration()
-	exec.Run()
+	go func() {
+		exec.Run()
+	}()
+	// Canal para capturar señal de interrupción
+	quit := make(chan os.Signal, 1)
+	signal.Notify(quit, syscall.SIGINT)
+	<-quit // Espera CTRL+C o kill
+
+	log.Println("Apagando servidor...")
+
+	// Cierre con timeout de 5 segundos
+	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+	defer cancel()
+
+	if err := srv.Srv.Shutdown(ctx); err != nil {
+		log.Fatalf("Error cerrando el servidor: %v", err)
+	}
+
+	log.Println("Servidor cerrado limpiamente")
 
 }

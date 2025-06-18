@@ -55,3 +55,9 @@ go run main --path=[ruta donde esta el (name).json o yml para crear tu api] \
             --mode=[static | watch] \
             --port=[8000]
 ```
+
+
+## Prerequisitos
+
+1. SQLite 
+2. 

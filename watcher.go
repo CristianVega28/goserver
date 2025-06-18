@@ -6,6 +6,7 @@ import (
 	"os/exec"
 	"regexp"
 	"strings"
+	"syscall"
 
 	"github.com/CristianVega28/goserver/utils"
 	"github.com/fsnotify/fsnotify"
@@ -20,12 +21,15 @@ type (
 		getMode() string
 		setPath(path string)
 		getPath() string
-		Watch(path string, childre *exec.Cmd, enviroment string)
+		setCmd(children *exec.Cmd)
+		getCmd() *exec.Cmd
+		Watch(path string, enviroment string)
 	}
 	Watcher struct {
 		Port string
 		Mode string
 		Path string
+		Cmd  *exec.Cmd
 	}
 )
 
@@ -46,17 +50,18 @@ func main() {
 	watcher.setPath(path)
 	watcher.setPort(port)
 
-	cmd := execution(enviroment, watcher)
+	// Watcher into as reference
+	execution(enviroment, watcher)
 	fmt.Println(mode)
 
 	if mode == "watch" {
 		logs.Msg(fmt.Sprintf("Watching changes in %s", path))
-		watcher.Watch(path, cmd, enviroment)
+		watcher.Watch(path, enviroment)
 	}
 
 }
 
-func (w *Watcher) Watch(path string, children *exec.Cmd, enviroment string) {
+func (w *Watcher) Watch(path string, enviroment string) {
 	watcher, err := fsnotify.NewWatcher()
 
 	if err != nil {
@@ -73,13 +78,17 @@ func (w *Watcher) Watch(path string, children *exec.Cmd, enviroment string) {
 					return
 				}
 				if event.Has(fsnotify.Write) {
-					children.Process.Kill()
-					var wa WatcherI = &Watcher{
-						Port: w.Port,
-						Mode: w.Mode,
-						Path: w.Path,
+					if w.getCmd() != nil {
+						logs.Msg("killing previous process")
+
+						// windows.GenerateConsoleCtrlEvent(
+						// 	windows.CTRL_C_EVENT, uint32(w.Cmd.Process.Pid))
+						// w.Cmd.Process.Kill()
+						w.Cmd.Process.Signal(syscall.SIGINT)
 					}
-					children = execution(enviroment, wa)
+
+					execution(enviroment, w)
+
 					logs.Msg(fmt.Sprintf("modified -> event: %s, file: %s", event.Op, event.Name))
 				}
 			case err, ok := <-watcher.Errors:
@@ -116,6 +125,14 @@ func (w *Watcher) setPath(path string) {
 }
 func (w *Watcher) getPath() string {
 	return w.Path
+}
+
+func (w *Watcher) getCmd() *exec.Cmd {
+	return w.Cmd
+}
+
+func (w *Watcher) setCmd(children *exec.Cmd) {
+	w.Cmd = children
 }
 
 func extractMode() (string, string, string) {
@@ -175,17 +192,29 @@ func execution(enviroment string, watcher WatcherI) (children *exec.Cmd) {
 
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
+	// cmd.SysProcAttr = &syscall.SysProcAttr{
+	// 	CreationFlags: syscall.CREATE_NEW_PROCESS_GROUP,
+	// }
 
 	// Si quieres enviar entrada también
 	cmd.Stdin = os.Stdin
 
-	// Ejecutar y mantenerlo vivo (esperar)
-	err := cmd.Start()
+	mode := watcher.getMode()
+	var errRunner error
 
-	if err != nil {
-		fmt.Println("Error ejecutando core/main.go:", err)
+	// Ejecutar y mantenerlo vivo (esperar)
+	if mode == "static" {
+		errRunner = cmd.Run()
+	} else if mode == "watch" {
+		errRunner = cmd.Start()
+	}
+
+	if errRunner != nil {
+		fmt.Println("Error ejecutando core/main.go:", errRunner)
 	}
 	logs.Msg(fmt.Sprintf("PID %s", cmd.Process.Pid))
+
+	watcher.setCmd(cmd)
 
 	return cmd
 }
