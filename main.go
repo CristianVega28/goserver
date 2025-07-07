@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"os"
 	"os/signal"
@@ -37,18 +38,24 @@ func main() {
 	// Canal para capturar señal de interrupción
 	quit := make(chan os.Signal, 1)
 	signal.Notify(quit, syscall.SIGINT)
-	<-quit // Espera CTRL+C o kill
+	fmt.Println("Server PID")
+	fmt.Println(os.Getpid())
 
-	log.Println("Apagando servidor...")
+	go func() {
+		<-quit
+		log.Println("Apagando servidor...")
 
-	// Cierre con timeout de 5 segundos
-	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
-	defer cancel()
+		// Cierre con timeout de 5 segundos
+		ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+		defer cancel()
 
-	if err := srv.Srv.Shutdown(ctx); err != nil {
-		log.Fatalf("Error cerrando el servidor: %v", err)
-	}
+		if err := srv.Srv.Shutdown(ctx); err != nil {
+			log.Fatalf("Error cerrando el servidor: %v", err)
+		}
 
-	log.Println("Servidor cerrado limpiamente")
+		log.Println("Servidor cerrado limpiamente")
+
+	}()
+	select {}
 
 }

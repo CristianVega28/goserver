@@ -17,7 +17,7 @@ var helper helpers.Response = helpers.Response{}
 func Get(next http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		if r.Method == http.MethodGet {
-			helper.ResponseJson(w, map[string]string{}, http.StatusBadRequest)
+			// helper.ResponseJson(w, map[string]string{}, http.StatusBadRequest)
 		}
 
 		next(w, r)

@@ -71,9 +71,9 @@ func (server *Server) GenrateServer(data map[string]any) {
 				// it create GET, POST , DELETE, PUT
 				path := fmt.Sprintf("/%s", key)
 				server.mux.HandleFunc(path, middleware.Get(funcWithMiddleware))
-				server.mux.HandleFunc(path, middleware.Post(funcWithMiddleware))
-				server.mux.HandleFunc(path, middleware.Delete(funcWithMiddleware))
-				server.mux.HandleFunc(path, middleware.Put(funcWithMiddleware))
+				// server.mux.HandleFunc(path, middleware.Post(funcWithMiddleware))
+				// server.mux.HandleFunc(path, middleware.Delete(funcWithMiddleware))
+				// server.mux.HandleFunc(path, middleware.Put(funcWithMiddleware))
 
 			case reflect.Map:
 				fmt.Println(value)

@@ -5,8 +5,8 @@ import (
 	"os"
 	"os/exec"
 	"regexp"
+	"runtime"
 	"strings"
-	"syscall"
 
 	"github.com/CristianVega28/goserver/utils"
 	"github.com/fsnotify/fsnotify"
@@ -35,13 +35,19 @@ type (
 
 var (
 	enviroment string        = "development" // Default environment
+	pathTmp    string        = "./tmp"
 	l          utils.LoggerI = &utils.Logger{}
 	logs       utils.Logger  = l.Create()
 )
 
 func main() {
 
-	fmt.Println("Watcher initialized")
+	_, err := os.Stat(pathTmp)
+
+	if os.IsNotExist(err) {
+		os.Mkdir(pathTmp, 0755)
+	}
+
 	var watcher WatcherI = &Watcher{}
 
 	mode, path, port := extractMode()
@@ -79,12 +85,15 @@ func (w *Watcher) Watch(path string, enviroment string) {
 				}
 				if event.Has(fsnotify.Write) {
 					if w.getCmd() != nil {
-						logs.Msg("killing previous process")
-
-						// windows.GenerateConsoleCtrlEvent(
-						// 	windows.CTRL_C_EVENT, uint32(w.Cmd.Process.Pid))
-						// w.Cmd.Process.Kill()
-						w.Cmd.Process.Signal(syscall.SIGINT)
+						if runtime.GOOS == "windows" {
+							fmt.Println("Windows detected, killing process")
+							cmd := w.getCmd()
+							pid := cmd.Process.Pid
+							pidcurrent := exec.Command("taskkill", "/F", "/PID", fmt.Sprintf("%d", pid))
+							pidcurrent.Stdout = os.Stdout
+							pidcurrent.Stderr = os.Stderr
+							pidcurrent.Run()
+						}
 					}
 
 					execution(enviroment, w)
@@ -173,7 +182,7 @@ func execution(enviroment string, watcher WatcherI) (children *exec.Cmd) {
 	arrayMainFile := []string{}
 
 	if enviroment == "development" {
-		arrayMainFile = []string{"run", "main.go"}
+		arrayMainFile = []string{"build", fmt.Sprintf("-o %s\\main.exe", pathTmp), "main.go"}
 	} else if enviroment == "production" {
 		arrayMainFile = []string{"./main.exe"} // check out about the os of user
 	}
@@ -185,7 +194,9 @@ func execution(enviroment string, watcher WatcherI) (children *exec.Cmd) {
 
 	fmt.Println(watcher.getMode())
 	if enviroment == "development" {
-		cmd = exec.Command("go", append(arrayMainFile, args...)...)
+		build := exec.Command("go", arrayMainFile...)
+		fmt.Println(build.Args)
+		cmd = exec.Command(fmt.Sprintf("%s/main.exe", pathTmp), args...)
 	} else if enviroment == "production" {
 		cmd = exec.Command(arrayMainFile[0], args...)
 	}
