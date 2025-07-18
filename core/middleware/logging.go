@@ -13,6 +13,7 @@ func Logging(f http.HandlerFunc) http.HandlerFunc {
 		log := logs.Create()
 		// output := zerolog.ConsoleWriter{Out: os.Stdout, TimeFormat: time.RFC3339}
 		// log.Logger = zerolog.New(output).With().Timestamp().Logger()
+		fmt.Println("login")
 		log.Msg(fmt.Sprintf("Method: %s, Path: %s", r.Method, r.URL.Path))
 		f(w, r)
 	}

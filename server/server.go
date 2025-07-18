@@ -34,22 +34,6 @@ func (server *Server) Up(serverVar *http.Server) {
 
 }
 
-func (server *Server) Close() {
-
-	fmt.Println("\nApagando servidor...")
-
-	// ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	// defer cancel()
-
-	if err := server.Srv.Close(); err != nil {
-		fmt.Printf("Error cerrando servidor: %s\n", err)
-	} else {
-		fmt.Println("Servidor cerrado correctamente.")
-	}
-
-	fmt.Println("Reiniciando servidor...")
-}
-
 func (server *Server) GenrateServer(data map[string]any) {
 
 	response := helpers.Response{}
@@ -58,26 +42,31 @@ func (server *Server) GenrateServer(data map[string]any) {
 		for key, value := range data {
 
 			typeValue := reflect.TypeOf(value)
-			fmt.Println(typeValue.Kind())
 			switch typeValue.Kind() {
 			case reflect.Slice:
-
 				funcWithMiddleware := middleware.Chain(func(w http.ResponseWriter, r *http.Request) {
-					response := helpers.Response{}
-					response.ResponseJson(w, value, http.StatusOK)
+					switch r.Method {
 
+					case http.MethodGet:
+						Get(w, r, nil)
+					case http.MethodPost:
+						Post(w, r, nil)
+					case http.MethodDelete:
+						Delete(w, r, nil)
+					case http.MethodPut:
+						Put(w, r, nil)
+
+					}
 				}, middleware.Logging)
 
 				// it create GET, POST , DELETE, PUT
 				path := fmt.Sprintf("/%s", key)
-				server.mux.HandleFunc(path, middleware.Get(funcWithMiddleware))
+				server.mux.HandleFunc(path, funcWithMiddleware)
 				// server.mux.HandleFunc(path, middleware.Post(funcWithMiddleware))
 				// server.mux.HandleFunc(path, middleware.Delete(funcWithMiddleware))
 				// server.mux.HandleFunc(path, middleware.Put(funcWithMiddleware))
 
 			case reflect.Map:
-				fmt.Println(value)
-
 			}
 
 			// server.mux.HandleFunc("/"+key, middleware.Chain(func(w http.ResponseWriter, r *http.Request){} , middleware.Logging))
@@ -86,7 +75,7 @@ func (server *Server) GenrateServer(data map[string]any) {
 	server.mux.HandleFunc("/up", func(w http.ResponseWriter, r *http.Request) {
 		response.ResponseJson(w, map[string]any{
 			"code":    http.StatusAccepted,
-			"message": "up",
+			"message": "up change",
 		}, http.StatusAccepted)
 	})
 

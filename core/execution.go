@@ -5,6 +5,7 @@ import (
 	"regexp"
 	"strings"
 
+	"github.com/CristianVega28/goserver/core/middleware"
 	"github.com/CristianVega28/goserver/server"
 	"github.com/rs/zerolog/log"
 	"github.com/samber/lo"
@@ -17,7 +18,7 @@ type (
 		port          string
 		File          File
 		Server        *server.Server
-		MapMiddleware server.MapMiddleware
+		MapMiddleware middleware.MapMiddleware
 	}
 )
 
@@ -37,7 +38,6 @@ func (exec *Execution) ParserArg() {
 	matches := rex.FindAllString(strings.Join(exec.Args, " "), -1)
 	lo.ForEach(matches, func(item string, key int) {
 		splitted := strings.Split(item, "=")
-		fmt.Println(splitted)
 		if len(splitted) == 2 {
 			switch splitted[0] {
 			case "--port":

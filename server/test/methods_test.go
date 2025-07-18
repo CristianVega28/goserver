@@ -4,10 +4,10 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/CristianVega28/goserver/server"
+	"github.com/CristianVega28/goserver/core/middleware"
 )
 
 func TestNameMiddleware(t *testing.T) {
-	result := server.CreateMapMiddleware()
+	result := middleware.CreateMapMiddleware()
 	fmt.Println(result)
 }

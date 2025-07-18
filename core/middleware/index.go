@@ -2,61 +2,17 @@ package middleware
 
 import (
 	"net/http"
-
-	"github.com/CristianVega28/goserver/helpers"
+	"os"
+	"path/filepath"
+	"strings"
 )
 
 type (
 	MiddlewareFunction func(w http.HandlerFunc) http.HandlerFunc
+	MapMiddleware      map[string][]MiddlewareFunction
 
 	// helper helpers.Response{}
 )
-
-var helper helpers.Response = helpers.Response{}
-
-func Get(next http.HandlerFunc) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		if r.Method == http.MethodGet {
-			// helper.ResponseJson(w, map[string]string{}, http.StatusBadRequest)
-		}
-
-		next(w, r)
-	}
-}
-func Post(next http.HandlerFunc) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		if r.Method == http.MethodPost {
-			helper.ResponseJson(w, map[string]string{
-				"error": "No esta permitido ese tipo de solicit",
-			}, http.StatusBadRequest)
-		}
-
-		next(w, r)
-	}
-}
-func Delete(next http.HandlerFunc) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		if r.Method == http.MethodDelete {
-			helper.ResponseJson(w, map[string]string{
-				"error": "No esta permitido ese tipo de solicit",
-			}, http.StatusBadRequest)
-		}
-
-		next(w, r)
-	}
-}
-
-func Put(next http.HandlerFunc) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		if r.Method == http.MethodPut {
-			helper.ResponseJson(w, map[string]string{
-				"error": "No esta permitido ese tipo de solicit",
-			}, http.StatusBadRequest)
-		}
-
-		next(w, r)
-	}
-}
 
 func Chain(f http.HandlerFunc, middleware ...MiddlewareFunction) http.HandlerFunc {
 	for _, v := range middleware {
@@ -82,4 +38,35 @@ func FunctionsSecurityMiddleware() []MiddlewareFunction {
 		securitymid.Csrf,
 		securitymid.RateLimit,
 	}
+}
+
+func CreateMapMiddleware() MapMiddleware {
+	entries := nameMiddlewareFromDirectories()
+	mappingMiddleware := make(MapMiddleware)
+
+	for _, file := range entries {
+		name := strings.Split(file.Name(), ".")[0]
+		switch name {
+		case "auth":
+			mappingMiddleware[name] = FunctionsAuthMiddleware()
+
+		case "security":
+			mappingMiddleware[name] = FunctionsSecurityMiddleware()
+
+		}
+	}
+	return mappingMiddleware
+}
+
+func nameMiddlewareFromDirectories() []os.DirEntry {
+	cwd, err := os.Getwd()
+
+	if err != nil {
+		panic(err)
+	}
+
+	pathMiddleware := filepath.Join(cwd, "/../../core/middleware")
+	filesMiddleware, _ := os.ReadDir(pathMiddleware)
+
+	return filesMiddleware
 }

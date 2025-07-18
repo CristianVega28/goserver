@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"regexp"
 	"runtime"
 	"strings"
@@ -35,7 +36,7 @@ type (
 
 var (
 	enviroment string        = "development" // Default environment
-	pathTmp    string        = "./tmp"
+	pathTmp    string        = ".\\tmp"
 	l          utils.LoggerI = &utils.Logger{}
 	logs       utils.Logger  = l.Create()
 )
@@ -58,7 +59,6 @@ func main() {
 
 	// Watcher into as reference
 	execution(enviroment, watcher)
-	fmt.Println(mode)
 
 	if mode == "watch" {
 		logs.Msg(fmt.Sprintf("Watching changes in %s", path))
@@ -86,7 +86,6 @@ func (w *Watcher) Watch(path string, enviroment string) {
 				if event.Has(fsnotify.Write) {
 					if w.getCmd() != nil {
 						if runtime.GOOS == "windows" {
-							fmt.Println("Windows detected, killing process")
 							cmd := w.getCmd()
 							pid := cmd.Process.Pid
 							pidcurrent := exec.Command("taskkill", "/F", "/PID", fmt.Sprintf("%d", pid))
@@ -182,7 +181,8 @@ func execution(enviroment string, watcher WatcherI) (children *exec.Cmd) {
 	arrayMainFile := []string{}
 
 	if enviroment == "development" {
-		arrayMainFile = []string{"build", fmt.Sprintf("-o %s\\main.exe", pathTmp), "main.go"}
+		pathTmpFull := filepath.Join(".\\", pathTmp, "main.exe")
+		arrayMainFile = []string{"build", "-o", fmt.Sprintf("./%s", pathTmpFull), "main.go"}
 	} else if enviroment == "production" {
 		arrayMainFile = []string{"./main.exe"} // check out about the os of user
 	}
@@ -195,20 +195,25 @@ func execution(enviroment string, watcher WatcherI) (children *exec.Cmd) {
 	fmt.Println(watcher.getMode())
 	if enviroment == "development" {
 		build := exec.Command("go", arrayMainFile...)
+		err := build.Run()
+		if err != nil {
+			fmt.Println(err.Error())
+		}
+
 		fmt.Println(build.Args)
-		cmd = exec.Command(fmt.Sprintf("%s/main.exe", pathTmp), args...)
+		cmd = exec.Command(fmt.Sprintf("./%s/main.exe", pathTmp), args...)
 	} else if enviroment == "production" {
 		cmd = exec.Command(arrayMainFile[0], args...)
 	}
 
-	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
+	// cmd.Stdout = os.Stdout
+	// cmd.Stderr = os.Stderr
 	// cmd.SysProcAttr = &syscall.SysProcAttr{
 	// 	CreationFlags: syscall.CREATE_NEW_PROCESS_GROUP,
 	// }
 
 	// Si quieres enviar entrada también
-	cmd.Stdin = os.Stdin
+	// cmd.Stdin = os.Stdin
 
 	mode := watcher.getMode()
 	var errRunner error
@@ -223,7 +228,6 @@ func execution(enviroment string, watcher WatcherI) (children *exec.Cmd) {
 	if errRunner != nil {
 		fmt.Println("Error ejecutando core/main.go:", errRunner)
 	}
-	logs.Msg(fmt.Sprintf("PID %s", cmd.Process.Pid))
 
 	watcher.setCmd(cmd)
 
