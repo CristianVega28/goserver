@@ -16,7 +16,8 @@ type (
 
 var helper helpers.Response = helpers.Response{}
 
-func Get(w http.ResponseWriter, r *http.Request, cfg any) error {
+func Get(w http.ResponseWriter, r *http.Request, cfg any, values any) error {
+	helper.ResponseJson(w, values, http.StatusAccepted)
 	return nil
 }
 func Post(w http.ResponseWriter, r *http.Request, cfg any) error {

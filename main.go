@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"os"
 
 	"github.com/CristianVega28/goserver/core"
@@ -22,7 +21,6 @@ func main() {
 		MapMiddleware: middleware.CreateMapMiddleware(),
 	}
 
-	fmt.Println("new change")
 	exec.ParserArg()
 	// var isEvent bool = exec.GetMode()
 

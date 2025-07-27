@@ -25,6 +25,13 @@ type (
 		setCmd(children *exec.Cmd)
 		getCmd() *exec.Cmd
 		Watch(path string, enviroment string)
+		removeCompiledFile()
+		reloadByOs()
+	}
+
+	PathsI interface {
+		setPath(path string)
+		getPath() string
 	}
 	Watcher struct {
 		Port string
@@ -32,14 +39,75 @@ type (
 		Path string
 		Cmd  *exec.Cmd
 	}
+
+	Paths struct {
+		Path        string
+		NamePathTmp string
+	}
 )
 
 var (
 	enviroment string        = "development" // Default environment
-	pathTmp    string        = ".\\tmp"
+	pathTmp    string        = "tmp"
 	l          utils.LoggerI = &utils.Logger{}
 	logs       utils.Logger  = l.Create()
 )
+
+func (w *Watcher) setPort(port string) {
+	w.Port = port
+}
+func (w *Watcher) getPort() string {
+	return w.Port
+}
+func (w *Watcher) setMode(mode string) {
+	w.Mode = mode
+}
+func (w *Watcher) getMode() string {
+	return w.Mode
+}
+func (w *Watcher) setPath(path string) {
+	w.Path = path
+}
+func (w *Watcher) getPath() string {
+	return w.Path
+}
+
+func (w *Watcher) getCmd() *exec.Cmd {
+	return w.Cmd
+}
+
+func (w *Watcher) setCmd(children *exec.Cmd) {
+	w.Cmd = children
+}
+
+func (pt *Watcher) removeCompiledFile() {
+	pathTmpFull := filepath.Join(pathTmp, "main.exe")
+	if _, err := os.Stat(pathTmpFull); !os.IsNotExist(err) {
+		err = os.Remove(pathTmpFull)
+		if err != nil {
+			logs.Fatal(fmt.Sprintf("Error removing compiled file: %s", err.Error()))
+		}
+	}
+}
+
+func (w *Watcher) reloadByOs() {
+	if runtime.GOOS == "windows" {
+		cmd := w.getCmd()
+		pid := cmd.Process.Pid
+		pidcurrent := exec.Command("taskkill", "/F", "/PID", fmt.Sprintf("%d", pid))
+		pidcurrent.Stdout = os.Stdout
+		pidcurrent.Stderr = os.Stderr
+		pidcurrent.Run()
+	} else {
+		cmd := w.getCmd()
+		pid := cmd.Process.Pid
+		pidcurrent := exec.Command("kill", fmt.Sprintf("%d", pid))
+		pidcurrent.Stdout = os.Stdout
+		pidcurrent.Stderr = os.Stderr
+		pidcurrent.Run()
+	}
+
+}
 
 func main() {
 
@@ -85,14 +153,8 @@ func (w *Watcher) Watch(path string, enviroment string) {
 				}
 				if event.Has(fsnotify.Write) {
 					if w.getCmd() != nil {
-						if runtime.GOOS == "windows" {
-							cmd := w.getCmd()
-							pid := cmd.Process.Pid
-							pidcurrent := exec.Command("taskkill", "/F", "/PID", fmt.Sprintf("%d", pid))
-							pidcurrent.Stdout = os.Stdout
-							pidcurrent.Stderr = os.Stderr
-							pidcurrent.Run()
-						}
+						w.reloadByOs()
+						w.removeCompiledFile()
 					}
 
 					execution(enviroment, w)
@@ -114,33 +176,6 @@ func (w *Watcher) Watch(path string, enviroment string) {
 	}
 	<-make(chan struct{})
 
-}
-
-func (w *Watcher) setPort(port string) {
-	w.Port = port
-}
-func (w *Watcher) getPort() string {
-	return w.Port
-}
-func (w *Watcher) setMode(mode string) {
-	w.Mode = mode
-}
-func (w *Watcher) getMode() string {
-	return w.Mode
-}
-func (w *Watcher) setPath(path string) {
-	w.Path = path
-}
-func (w *Watcher) getPath() string {
-	return w.Path
-}
-
-func (w *Watcher) getCmd() *exec.Cmd {
-	return w.Cmd
-}
-
-func (w *Watcher) setCmd(children *exec.Cmd) {
-	w.Cmd = children
 }
 
 func extractMode() (string, string, string) {
@@ -181,10 +216,10 @@ func execution(enviroment string, watcher WatcherI) (children *exec.Cmd) {
 	arrayMainFile := []string{}
 
 	if enviroment == "development" {
-		pathTmpFull := filepath.Join(".\\", pathTmp, "main.exe")
-		arrayMainFile = []string{"build", "-o", fmt.Sprintf("./%s", pathTmpFull), "main.go"}
+		pathTmpFull := filepath.Join(pathTmp, "main.exe")
+		arrayMainFile = []string{"build", "-o", pathTmpFull, "main.go"}
 	} else if enviroment == "production" {
-		arrayMainFile = []string{"./main.exe"} // check out about the os of user
+		arrayMainFile = []string{filepath.Join("main.exe")} // check out about the os of user
 	}
 
 	args := []string{
@@ -192,31 +227,22 @@ func execution(enviroment string, watcher WatcherI) (children *exec.Cmd) {
 		fmt.Sprintf("--path=%s", watcher.getPath()),
 	}
 
-	fmt.Println(watcher.getMode())
 	if enviroment == "development" {
 		build := exec.Command("go", arrayMainFile...)
 		err := build.Run()
 		if err != nil {
 			fmt.Println(err.Error())
 		}
-
-		fmt.Println(build.Args)
-		cmd = exec.Command(fmt.Sprintf("./%s/main.exe", pathTmp), args...)
+		cmd = exec.Command(filepath.Join(pathTmp, "main.exe"), args...)
 	} else if enviroment == "production" {
 		cmd = exec.Command(arrayMainFile[0], args...)
 	}
 
-	// cmd.Stdout = os.Stdout
-	// cmd.Stderr = os.Stderr
-	// cmd.SysProcAttr = &syscall.SysProcAttr{
-	// 	CreationFlags: syscall.CREATE_NEW_PROCESS_GROUP,
-	// }
-
-	// Si quieres enviar entrada también
-	// cmd.Stdin = os.Stdin
-
 	mode := watcher.getMode()
 	var errRunner error
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+	cmd.Stdin = os.Stdin
 
 	// Ejecutar y mantenerlo vivo (esperar)
 	if mode == "static" {

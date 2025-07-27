@@ -2,7 +2,14 @@ package helpers
 
 type (
 	ConfigServerApi struct {
-		middleware []string
-		plugin     []string
+		Request       []string      `json:"request"`
+		MiddlewareApi MiddlewareApi `json:"middleware"`
+		Response      any           `json:"response"`
+	}
+
+	MiddlewareApi struct {
+		Auth     string   `json:"auth"`
+		Logging  bool     `json:"logging"`
+		Security []string `json:"security"`
 	}
 )

@@ -2,3 +2,4 @@
 *.db
 *.sqlite
 *.exe
+/tmp

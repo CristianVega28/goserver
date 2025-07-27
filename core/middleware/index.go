@@ -16,7 +16,7 @@ type (
 
 func Chain(f http.HandlerFunc, middleware ...MiddlewareFunction) http.HandlerFunc {
 	for _, v := range middleware {
-		v(f)
+		f = v(f)
 	}
 
 	return f

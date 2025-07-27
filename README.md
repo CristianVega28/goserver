@@ -36,6 +36,47 @@ Tener en cuenta que tambien puede compilarlo respecto a su arquitectura.
             "work" :    "medico"
         }
     ],
+     "posts": 
+    {
+        "request": ["POST", "GET"],
+        "middleware": {
+            "auth": "bearer",
+            "logging": true,
+            "security": ["csrf", "xss"]
+        },
+        "response": [
+            {
+                "id": "100001_500001",
+                "created_time": "2025-07-26T18:03:21+0000",
+                "message": "¡Hola a todos! Este es mi primer post 😄",
+                "from": {
+                  "id": "100001",
+                  "name": "Lucía Fernández"
+                },
+                "permalink_url": "https://facebook.com/100001/posts/500001"
+            },
+            {
+                "id": "100002_500002",
+                "created_time": "2025-07-26T18:05:10+0000",
+                "message": "¡Feliz viernes! ¿Qué planes tienen para el fin de semana? 🎉",
+                "from": {
+                  "id": "100002",
+                  "name": "Carlos Pérez"
+                },
+                "permalink_url": "https://facebook.com/100002/posts/500002"
+            },
+            {
+                "id": "100003_500003",
+                "created_time": "2025-07-26T18:07:45+0000",
+                "message": "¡Saludos desde la playa! 🏖️",
+                "from": {
+                  "id": "100003",
+                  "name": "Ana Torres"
+                },
+                "permalink_url": "https://facebook.com/100003/posts/500003"
+            }
+        ]
+    }
 }
 ```
 
