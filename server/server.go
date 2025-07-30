@@ -32,10 +32,10 @@ func (server *Server) GenrateServer(data map[string]any) {
 		for key, value := range data {
 
 			typeValue := reflect.TypeOf(value)
+			path := fmt.Sprintf("/%s", key)
 			switch typeValue.Kind() {
 			case reflect.Slice:
 				// it create GET, POST , DELETE, PUT
-				path := fmt.Sprintf("/%s", key)
 				server.mux.HandleFunc(path, middleware.Chain(func(w http.ResponseWriter, r *http.Request) {
 					switch r.Method {
 					case http.MethodGet:
@@ -54,12 +54,29 @@ func (server *Server) GenrateServer(data map[string]any) {
 				if err != nil {
 					panic(err)
 				}
-
 				err = json.Unmarshal(valueResponse, &cfg)
 				if err != nil {
 					fmt.Println("Error unmarshalling config:", err)
 					continue
 				}
+
+				var funcRequest http.HandlerFunc
+
+				funcRequest = middleware.Chain(func(w http.ResponseWriter, r *http.Request) {
+					switch r.Method {
+					case http.MethodGet:
+						Get(w, r, &cfg, cfg.Response)
+					case http.MethodPost:
+						Post(w, r, &cfg)
+					case http.MethodDelete:
+						Delete(w, r, &cfg)
+					case http.MethodPut:
+						Put(w, r, &cfg)
+					}
+
+				})
+
+				server.mux.HandleFunc(path, funcRequest)
 
 			}
 		}
@@ -74,9 +91,4 @@ func (server *Server) GenrateServer(data map[string]any) {
 	server.Srv.Handler = server.mux
 
 	server.Srv.ListenAndServe()
-}
-func GeneralFunc(value any) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-
-	}
 }
