@@ -42,6 +42,7 @@ Tener en cuenta que tambien puede compilarlo respecto a su arquitectura.
         "middleware": {
             "auth": "bearer",
             "logging": true,
+            "db": true,
             "security": ["csrf", "xss"]
         },
         "response": [
@@ -75,7 +76,20 @@ Tener en cuenta que tambien puede compilarlo respecto a su arquitectura.
                 },
                 "permalink_url": "https://facebook.com/100003/posts/500003"
             }
-        ]
+        ],
+        "schema": {
+            "table_name": "posts",
+            "id": "primary_key",
+            "created_time": "datetime",
+            "message": "text",
+            "from": {
+                "table_name": "users",
+                "id": "primary_key",
+                "email": "varchar,255|unique",
+                "name": "varchar,255"
+            },
+            "permalink_url": "url"
+        }
     }
 }
 ```
@@ -86,13 +100,13 @@ El siguiente ejemplo le creará una ruta "user" con los siguientes metodos HTTP:
 ## Argumentos al ejecutar el script 
 ```bash
 # default 
-go run main --path=./api/(name).json \
+go run watcher.go --path=./api/(name).json \
             --mode=static \
             --port=8000
 
 
 # dev 🪒
-go run main --path=[ruta donde esta el (name).json o yml para crear tu api] \
+go run watcher.go --path=[ruta donde esta el (name).json o yml para crear tu api] \
             --mode=[static | watch] \
             --port=[8000]
 ```
@@ -101,4 +115,3 @@ go run main --path=[ruta donde esta el (name).json o yml para crear tu api] \
 ## Prerequisitos
 
 1. SQLite 
-2. 

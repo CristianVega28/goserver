@@ -2,9 +2,10 @@ package helpers
 
 type (
 	ConfigServerApi struct {
-		Request       []string      `json:"request"`
-		MiddlewareApi MiddlewareApi `json:"middleware"`
-		Response      any           `json:"response"`
+		Request       []string       `json:"request"`
+		MiddlewareApi MiddlewareApi  `json:"middleware"`
+		Response      any            `json:"response"`
+		Schema        map[string]any `json:"schema"`
 	}
 
 	MiddlewareApi struct {

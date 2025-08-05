@@ -33,3 +33,11 @@ func (l *Logger) Fatal(message string) {
 func (l *Logger) Msg(message string) {
 	l.log.Debug().Msg(message)
 }
+
+func (l *Logger) Everyone(message string, maps map[string]any) {
+	l.log.Info().Fields(maps).Msg(message)
+}
+
+func (l *Logger) Structs(message string, structs any) {
+	l.log.Info().Interface("obj", structs).Msg(message)
+}

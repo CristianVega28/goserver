@@ -25,6 +25,9 @@ type (
 		Create(model T) T
 		Init() Models
 	}
+	DB struct {
+		Conn *sql.DB
+	}
 )
 
 var looger = utils.Logger{}
@@ -51,8 +54,4 @@ func Connect() *sql.DB {
 	}
 
 	return db
-}
-
-func Migration() {
-
 }

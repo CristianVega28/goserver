@@ -6,8 +6,10 @@ import (
 	"net/http"
 	"reflect"
 
+	"github.com/CristianVega28/goserver/core/db"
 	"github.com/CristianVega28/goserver/core/middleware"
 	"github.com/CristianVega28/goserver/helpers"
+	"github.com/CristianVega28/goserver/utils"
 )
 
 type (
@@ -16,6 +18,9 @@ type (
 		Srv http.Server
 	}
 )
+
+var logs = utils.Logger{}
+var log = logs.Create()
 
 func (server *Server) NewServer() Server {
 	return Server{
@@ -76,6 +81,8 @@ func (server *Server) GenrateServer(data map[string]any) {
 
 				})
 
+				// log.Structs("Configuracion cfg", cfg)
+				SetConfigurationServer(cfg)
 				server.mux.HandleFunc(path, funcRequest)
 
 			}
@@ -91,4 +98,13 @@ func (server *Server) GenrateServer(data map[string]any) {
 	server.Srv.Handler = server.mux
 
 	server.Srv.ListenAndServe()
+}
+
+func SetConfigurationServer(cfg helpers.ConfigServerApi) {
+
+	if cfg.Schema != nil {
+		log.Structs("Schema", cfg.Schema)
+		db.MigrateSchema(cfg.Schema)
+
+	}
 }
