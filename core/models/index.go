@@ -2,6 +2,7 @@ package models
 
 import (
 	"database/sql"
+	"fmt"
 	"time"
 
 	_ "github.com/mattn/go-sqlite3"
@@ -17,7 +18,9 @@ type (
 	}
 
 	Models struct {
-		conn *sql.DB
+		conn      *sql.DB
+		TableName string
+		Fields    []string
 	}
 
 	ModelsI[T any] interface {
@@ -54,4 +57,44 @@ func Connect() *sql.DB {
 	}
 
 	return db
+}
+
+/*
+return (
+
+	existTable bool,
+	columns []string
+
+)
+*/
+func CheckAndTableInDatabase(name string, conn *sql.DB) (bool, []string) {
+
+	var existTable bool = false
+
+	rows, err := conn.Query(fmt.Sprintf("PRAGMA table_info(%s)", name))
+
+	if err != nil {
+		log.Fatal(err.Error())
+	}
+
+	defer rows.Close()
+
+	existTable = rows.Next()
+	if !existTable {
+		return existTable, nil
+	}
+
+	rowsCol, err := conn.Query(fmt.Sprintf("SELECT * FROM %s LIMIT 0", name))
+	if err != nil {
+		log.Fatal(err.Error())
+	}
+
+	defer rowsCol.Close()
+
+	cols, err := rowsCol.Columns()
+	if err != nil {
+		log.Fatal(err.Error())
+	}
+
+	return existTable, cols
 }

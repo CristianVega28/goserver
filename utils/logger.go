@@ -34,10 +34,14 @@ func (l *Logger) Msg(message string) {
 	l.log.Debug().Msg(message)
 }
 
-func (l *Logger) Everyone(message string, maps map[string]any) {
+func (l *Logger) Everyone(message string, maps any) {
 	l.log.Info().Fields(maps).Msg(message)
 }
 
 func (l *Logger) Structs(message string, structs any) {
 	l.log.Info().Interface("obj", structs).Msg(message)
+}
+
+func (l *Logger) Slice(message string, array any) {
+	l.log.Info().Interface(message, array)
 }
