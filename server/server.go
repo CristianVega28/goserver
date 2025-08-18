@@ -6,7 +6,6 @@ import (
 	"net/http"
 	"reflect"
 
-	"github.com/CristianVega28/goserver/core/db"
 	"github.com/CristianVega28/goserver/core/middleware"
 	"github.com/CristianVega28/goserver/helpers"
 	"github.com/CristianVega28/goserver/utils"
@@ -103,8 +102,12 @@ func (server *Server) GenrateServer(data map[string]any) {
 func SetConfigurationServer(cfg helpers.ConfigServerApi) {
 
 	if cfg.Schema != nil {
+
 		log.Structs("Schema", cfg.Schema)
-		db.MigrateSchema(cfg.Schema)
+		// Here create the tables in database
+		model := helpers.MigrateSchema(cfg.Schema)
+
+		model.Insert(cfg.Response)
 
 	}
 }

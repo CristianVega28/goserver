@@ -3,14 +3,13 @@ package db
 import (
 	"testing"
 
-	"github.com/CristianVega28/goserver/core/models"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestParserFieldsForCreatingTable(t *testing.T) {
 
 	t.Run("Create fields for table users and posts", func(t *testing.T) {
-		conn := models.Connect()
+		conn := Connect()
 		defer conn.Close()
 		var migrationSchema Migration = Migration{
 			TableName: "users",
@@ -73,7 +72,7 @@ func TestParserFieldsForCreatingTable(t *testing.T) {
 func TestVerifyCreateTableWithValueKeyFunction(t *testing.T) {
 
 	t.Run("Create table users with valueKey function", func(t *testing.T) {
-		conn := models.Connect()
+		conn := Connect()
 		defer conn.Close()
 		var migrationSchema Migration = Migration{
 			TableName: "users",
@@ -93,7 +92,7 @@ func TestVerifyCreateTableWithValueKeyFunction(t *testing.T) {
 			t.Errorf("Error creating table: %v", err)
 		}
 
-		existTable, _ := models.CheckAndTableInDatabase(migrationSchema.TableName, conn)
+		existTable, _ := CheckAndTableInDatabase(migrationSchema.TableName, conn)
 
 		assert.Equal(t, existTable, true, "Rows affected should be 0 for table creation")
 
@@ -101,7 +100,7 @@ func TestVerifyCreateTableWithValueKeyFunction(t *testing.T) {
 
 	// Above create the table users, now we test when it'll put new columns in existing table
 	t.Run("Create columns in existing table", func(t *testing.T) {
-		conn := models.Connect()
+		conn := Connect()
 		defer conn.Close()
 		var migrationSchema Migration = Migration{
 			TableName: "users",
@@ -126,6 +125,36 @@ func TestVerifyCreateTableWithValueKeyFunction(t *testing.T) {
 
 	})
 
+}
+
+func TestRawSqlForInsertIntoTable(t *testing.T) {
+	data := []map[string]any{map[string]any{
+		"id":            1,
+		"created_at":    "2023-10-01 12:00:00",
+		"message":       "Hello World",
+		"permalink_url": "http://example.com",
+	}}
+
+	metadata := []MetadataTable{
+		MetadataTable{
+			Type:  "INTEGER",
+			Field: "id",
+		},
+		MetadataTable{
+			Type:  "DATETIME",
+			Field: "created_at",
+		},
+		MetadataTable{
+			Type:  "TEXT",
+			Field: "message",
+		},
+		MetadataTable{
+			Type:  "TEXT",
+			Field: "permalink_url",
+		},
+	}
+	raw := InsertIntoTableRawSql("users", data, metadata)
+	assert.Equal(t, raw, "INSERT INTO users (id, created_at, message, permalink_url) VALUES ('1', '2023-10-01 12:00:00', 'Hello World', 'http://example.com');", "Raw SQL should match expected format")
 }
 
 func checkFields(tablename string, expected map[string]string, fields map[string]string, t *testing.T, exists bool) {

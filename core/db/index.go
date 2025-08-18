@@ -6,15 +6,20 @@ import (
 	"slices"
 	"strings"
 
-	"github.com/CristianVega28/goserver/core/models"
 	"github.com/CristianVega28/goserver/utils"
+	_ "github.com/mattn/go-sqlite3"
 	"github.com/samber/lo"
 )
 
 type (
+	//struct in charge to create/modify a table
 	Migration struct {
 		TableName string
 		Fields    map[string]string // field and type
+	}
+	MetadataTable struct {
+		Type  string
+		Field string
 	}
 	ValuesKey struct {
 		TableName       string // name of the table
@@ -31,38 +36,8 @@ type (
 var logs = utils.Logger{}
 var log = logs.Create()
 
-func MigrateSchema(schema map[string]any) {
-
-	var migration Migration
-	fields := make(map[string]string)
-	for key, value := range schema {
-		log.Msg("Migrating schema for: " + key)
-
-		if key == "table_name" {
-			if tablename, ok := value.(string); ok {
-				migration.TableName = tablename
-			}
-			continue
-		}
-
-		if nested, ok := value.(map[string]any); ok {
-			MigrateSchema(nested)
-		}
-
-		if typeValue, ok := value.(string); ok {
-			fields[key] = typeValue
-		}
-	}
-
-	migration.Fields = fields
-
-	// log.Structs("Migration schema", migration)
-
-	CreateTable(migration)
-}
-
-func CreateTable(mgn Migration) {
-	conn := models.Connect()
+func ExecSqlTable(mgn Migration) {
+	conn := Connect()
 
 	defer conn.Close()
 
@@ -81,7 +56,7 @@ func CreateTable(mgn Migration) {
 func parserFieldsToSql(tableName string, fields map[string]string, conn *sql.DB) string {
 	var tableSQL strings.Builder
 
-	existsTable, columns := models.CheckAndTableInDatabase(tableName, conn)
+	existsTable, columns := CheckAndTableInDatabase(tableName, conn)
 
 	if !existsTable {
 		tableSQL.WriteString(fmt.Sprintf("\nCREATE TABLE IF NOT EXISTS %s (\n", tableName))
@@ -185,50 +160,88 @@ func valueInKey(cfg ValuesKey) string {
 
 }
 
+func InsertIntoTableRawSql(tableName string, data []map[string]any, metadataTable []MetadataTable) string {
+	var insertSql strings.Builder
+	insertSql.WriteString(fmt.Sprintf("INSERT INTO %s (", tableName))
+
+	for index, value := range metadataTable {
+
+		insertSql.WriteString(fmt.Sprintf("%s ", value.Field))
+		if len(metadataTable)-1 != index {
+			insertSql.WriteString(", ")
+		}
+	}
+
+	insertSql.WriteString(") VALUES ")
+
+	for i := 0; i < len(data); i++ {
+		info := data[i]
+		var columnRaqSql strings.Builder
+
+		for _, value := range metadataTable {
+			if _, ok := info[value.Field].(map[string]any); !ok {
+				insertSql.WriteString(fmt.Sprintf("'%v', ", info[value.Field]))
+			}
+		}
+
+	}
+
+	return insertSql.String()
+}
+
+func Connect() *sql.DB {
+	db, err := sql.Open("sqlite3", "file:database.db?cache=shared&mode=rwc")
+
+	if err != nil {
+		log.Fatal("Failed to connect to the database: " + err.Error())
+	}
+
+	errPing := db.Ping()
+	if errPing != nil {
+		log.Fatal("Failed to ping the database: " + errPing.Error())
+	} else {
+		log.Msg("Connected to the database (SQLite)")
+	}
+
+	return db
+}
+
 /*
-	return (
-		type string,
-		size string,
-		constraint string
-	)
+return (
+
+	existTable bool,
+	columns []string
+
+)
 */
+func CheckAndTableInDatabase(name string, conn *sql.DB) (bool, []string) {
 
-func parserColumnsFields(value string) (string, string, string) {
-	separateAtribute := strings.Split(value, "|")
-	arrType := strings.Split(separateAtribute[0], ",")
-	var size string = ""
-	var constraint string = ""
+	var existTable bool = false
 
-	if conditionSize := len(arrType) > 1; conditionSize {
-		size = arrType[1]
+	rows, err := conn.Query(fmt.Sprintf("PRAGMA table_info(%s)", name))
+
+	if err != nil {
+		log.Fatal(err.Error())
 	}
 
-	if conditionConstraint := len(separateAtribute) > 1; conditionConstraint {
-		constraint = separateAtribute[1]
+	defer rows.Close()
+
+	existTable = rows.Next()
+	if !existTable {
+		return existTable, nil
 	}
 
-	return arrType[0], size, constraint
-
-}
-
-func typesByDatabase(typedb string) string {
-	switch typedb {
-	case "datetime":
-		return "DATETIME"
-	case "url":
-		return "TEXT"
-	default:
-		return typedb
+	rowsCol, err := conn.Query(fmt.Sprintf("SELECT * FROM %s LIMIT 0", name))
+	if err != nil {
+		log.Fatal(err.Error())
 	}
-}
 
-func constraintByDatabase(constraint string) string {
-	switch constraint {
-	case "not_null":
-		return "NOT NULL"
-	case "unique":
-		return "UNIQUE"
-	default:
-		return ""
+	defer rowsCol.Close()
+
+	cols, err := rowsCol.Columns()
+	if err != nil {
+		log.Fatal(err.Error())
 	}
+
+	return existTable, cols
 }

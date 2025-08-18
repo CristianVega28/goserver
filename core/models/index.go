@@ -2,11 +2,11 @@ package models
 
 import (
 	"database/sql"
-	"fmt"
 	"time"
 
 	_ "github.com/mattn/go-sqlite3"
 
+	"github.com/CristianVega28/goserver/core/db"
 	"github.com/CristianVega28/goserver/utils"
 )
 
@@ -17,16 +17,18 @@ type (
 		Updated_at time.Time
 	}
 
-	Models struct {
+	Models[T any] struct {
 		conn      *sql.DB
 		TableName string
-		Fields    []string
+		Fields    []db.MetadataTable
 	}
 
 	ModelsI[T any] interface {
 		Select(id string) T
-		Create(model T) T
-		Init() Models
+		Insert(m any) error
+		Init() Models[T]
+		SetMetadataTable(fields []db.MetadataTable)
+		SetTableName(name string)
 	}
 	DB struct {
 		Conn *sql.DB
@@ -36,65 +38,35 @@ type (
 var looger = utils.Logger{}
 var log = looger.Create()
 
-func (base *Models) Init() Models {
-	return Models{
-		conn: Connect(),
+func (base *Models[T]) Init() Models[T] {
+	return Models[T]{
+		conn: db.Connect(),
 	}
 }
+func (model *Models[T]) Insert(m any) error {
+	var rawSql string
+	if mapsInsert, ok := m.([]map[string]any); ok {
+		rawSql = db.InsertIntoTableRawSql(model.TableName, mapsInsert, model.Fields)
+	}
 
-func Connect() *sql.DB {
-	db, err := sql.Open("sqlite3", "file:database.db?cache=shared&mode=rwc")
-
+	_, err := model.conn.Exec(rawSql)
 	if err != nil {
-		log.Fatal("Failed to connect to the database: " + err.Error())
+		log.Fatal(err.Error())
+		return err
 	}
+	return nil
 
-	errPing := db.Ping()
-	if errPing != nil {
-		log.Fatal("Failed to ping the database: " + errPing.Error())
-	} else {
-		log.Msg("Connected to the database (SQLite)")
-	}
-
-	return db
 }
 
-/*
-return (
+func (model *Models[T]) Select(id string) T {
+	var a T
 
-	existTable bool,
-	columns []string
+	return a
+}
 
-)
-*/
-func CheckAndTableInDatabase(name string, conn *sql.DB) (bool, []string) {
-
-	var existTable bool = false
-
-	rows, err := conn.Query(fmt.Sprintf("PRAGMA table_info(%s)", name))
-
-	if err != nil {
-		log.Fatal(err.Error())
-	}
-
-	defer rows.Close()
-
-	existTable = rows.Next()
-	if !existTable {
-		return existTable, nil
-	}
-
-	rowsCol, err := conn.Query(fmt.Sprintf("SELECT * FROM %s LIMIT 0", name))
-	if err != nil {
-		log.Fatal(err.Error())
-	}
-
-	defer rowsCol.Close()
-
-	cols, err := rowsCol.Columns()
-	if err != nil {
-		log.Fatal(err.Error())
-	}
-
-	return existTable, cols
+func (model *Models[T]) SetMetadataTable(fields []db.MetadataTable) {
+	model.Fields = fields
+}
+func (model *Models[T]) SetTableName(name string) {
+	model.TableName = name
 }
