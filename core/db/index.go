@@ -168,7 +168,7 @@ func InsertIntoTableRawSql(tableName string, data []map[string]any, metadataTabl
 
 		insertSql.WriteString(fmt.Sprintf("%s ", value.Field))
 		if len(metadataTable)-1 != index {
-			insertSql.WriteString(", ")
+			insertSql.WriteString(",")
 		}
 	}
 
@@ -176,12 +176,26 @@ func InsertIntoTableRawSql(tableName string, data []map[string]any, metadataTabl
 
 	for i := 0; i < len(data); i++ {
 		info := data[i]
-		var columnRaqSql strings.Builder
+		// var columnRaqSql strings.Builder
+		insertSql.WriteString("(")
 
-		for _, value := range metadataTable {
+		for index, value := range metadataTable {
 			if _, ok := info[value.Field].(map[string]any); !ok {
-				insertSql.WriteString(fmt.Sprintf("'%v', ", info[value.Field]))
+				cast := castValueByType(info[value.Field], value.Type)
+				insertSql.WriteString(fmt.Sprintf("%v ", cast))
 			}
+
+			if index == len(metadataTable)-1 {
+				insertSql.WriteString(")")
+			} else {
+				insertSql.WriteString(",")
+			}
+		}
+
+		if i != len(data)-1 {
+			insertSql.WriteString(",")
+		} else {
+			insertSql.WriteString(";")
 		}
 
 	}

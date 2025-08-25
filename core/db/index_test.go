@@ -128,33 +128,80 @@ func TestVerifyCreateTableWithValueKeyFunction(t *testing.T) {
 }
 
 func TestRawSqlForInsertIntoTable(t *testing.T) {
-	data := []map[string]any{map[string]any{
-		"id":            1,
-		"created_at":    "2023-10-01 12:00:00",
-		"message":       "Hello World",
-		"permalink_url": "http://example.com",
-	}}
 
-	metadata := []MetadataTable{
-		MetadataTable{
-			Type:  "INTEGER",
-			Field: "id",
-		},
-		MetadataTable{
-			Type:  "DATETIME",
-			Field: "created_at",
-		},
-		MetadataTable{
-			Type:  "TEXT",
-			Field: "message",
-		},
-		MetadataTable{
-			Type:  "TEXT",
-			Field: "permalink_url",
-		},
-	}
-	raw := InsertIntoTableRawSql("users", data, metadata)
-	assert.Equal(t, raw, "INSERT INTO users (id, created_at, message, permalink_url) VALUES ('1', '2023-10-01 12:00:00', 'Hello World', 'http://example.com');", "Raw SQL should match expected format")
+	t.Run("Insert data when it's one record", func(t *testing.T) {
+		data := []map[string]any{{
+			"id":            1,
+			"created_at":    "2023-10-01 12:00:00",
+			"message":       "Hello World",
+			"permalink_url": "http://example.com",
+			"is_active":     true,
+		}}
+
+		metadata := []MetadataTable{
+			{
+				Type:  "INTEGER",
+				Field: "id",
+			},
+			{
+				Type:  "DATETIME",
+				Field: "created_at",
+			},
+			{
+				Type:  "TEXT",
+				Field: "message",
+			},
+			{
+				Type:  "TEXT",
+				Field: "permalink_url",
+			},
+			{
+				Type:  "BOOLEAN",
+				Field: "is_active",
+			},
+		}
+		raw := InsertIntoTableRawSql("users", data, metadata)
+		assert.Equal(t, raw, "INSERT INTO users (id ,created_at ,message ,permalink_url ,is_active ) VALUES (1 ,'2023-10-01 12:00:00' ,'Hello World' ,'http://example.com' ,true );", "Raw SQL should match expected format")
+
+	})
+
+	t.Run("Insert data when it's multiple records", func(t *testing.T) {
+		data := []map[string]any{
+			{
+				"id":            1,
+				"created_at":    "2023-10-01 12:00:00",
+				"message":       "Hello World",
+				"permalink_url": "http://example.com",
+			},
+			{
+				"id":            2,
+				"created_at":    "2023-10-02 13:00:00",
+				"message":       "Second Message",
+				"permalink_url": "http://example.org",
+			},
+		}
+
+		metadata := []MetadataTable{
+			{
+				Type:  "INTEGER",
+				Field: "id",
+			},
+			{
+				Type:  "DATETIME",
+				Field: "created_at",
+			},
+			{
+				Type:  "TEXT",
+				Field: "message",
+			},
+			{
+				Type:  "TEXT",
+				Field: "permalink_url",
+			},
+		}
+		raw := InsertIntoTableRawSql("users", data, metadata)
+		assert.Equal(t, raw, "INSERT INTO users (id ,created_at ,message ,permalink_url ) VALUES (1 ,'2023-10-01 12:00:00' ,'Hello World' ,'http://example.com' ),(2 ,'2023-10-02 13:00:00' ,'Second Message' ,'http://example.org' );", "Raw SQL should match expected format")
+	})
 }
 
 func checkFields(tablename string, expected map[string]string, fields map[string]string, t *testing.T, exists bool) {

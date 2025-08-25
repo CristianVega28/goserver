@@ -1,6 +1,9 @@
 package db
 
-import "strings"
+import (
+	"fmt"
+	"strings"
+)
 
 /*
 	return (
@@ -50,5 +53,14 @@ func constraintByDatabase(constraint string) string {
 		return "UNIQUE"
 	default:
 		return ""
+	}
+}
+
+func castValueByType(value any, typeDb string) any {
+	switch strings.ToUpper(typeDb) {
+	case "INTEGER", "REAL", "BOOLEAN":
+		return value
+	default:
+		return fmt.Sprintf("'%v'", value)
 	}
 }

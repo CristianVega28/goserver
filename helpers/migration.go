@@ -22,7 +22,7 @@ func MigrateSchema(schema map[string]any) models.ModelsI[map[string]any] {
 		if key == "table_name" {
 			if tablename, ok := value.(string); ok {
 				migration.TableName = tablename
-				// model.SetTableName(tablename)
+				model.SetTableName(tablename)
 			}
 			continue
 		}

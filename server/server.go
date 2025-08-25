@@ -103,11 +103,10 @@ func SetConfigurationServer(cfg helpers.ConfigServerApi) {
 
 	if cfg.Schema != nil {
 
-		log.Structs("Schema", cfg.Schema)
 		// Here create the tables in database
 		model := helpers.MigrateSchema(cfg.Schema)
-
-		model.Insert(cfg.Response)
+		response := checkTypesForResponse(cfg.Response)
+		model.Insert(response)
 
 	}
 }
