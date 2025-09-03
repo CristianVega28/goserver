@@ -161,6 +161,7 @@ func valueInKey(cfg ValuesKey) string {
 }
 
 func InsertIntoTableRawSql(tableName string, data []map[string]any, metadataTable []MetadataTable) string {
+
 	var insertSql strings.Builder
 	insertSql.WriteString(fmt.Sprintf("INSERT INTO %s (", tableName))
 
@@ -174,33 +175,14 @@ func InsertIntoTableRawSql(tableName string, data []map[string]any, metadataTabl
 
 	insertSql.WriteString(") VALUES ")
 
-	for i := 0; i < len(data); i++ {
-		info := data[i]
-		// var columnRaqSql strings.Builder
-		insertSql.WriteString("(")
+	count := reviewLengthValues(tableName)
 
-		for index, value := range metadataTable {
-			if _, ok := info[value.Field].(map[string]any); !ok {
-				cast := castValueByType(info[value.Field], value.Type)
-				insertSql.WriteString(fmt.Sprintf("%v ", cast))
-			}
-
-			if index == len(metadataTable)-1 {
-				insertSql.WriteString(")")
-			} else {
-				insertSql.WriteString(",")
-			}
-		}
-
-		if i != len(data)-1 {
-			insertSql.WriteString(",")
-		} else {
-			insertSql.WriteString(";")
-		}
-
+	if count == 0 {
+		return insertSqlFunc(&insertSql, data, metadataTable)
+	} else {
+		dataBk := data[count:]
+		return insertSqlFunc(&insertSql, dataBk, metadataTable)
 	}
-
-	return insertSql.String()
 }
 
 func Connect() *sql.DB {

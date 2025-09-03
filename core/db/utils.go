@@ -64,3 +64,54 @@ func castValueByType(value any, typeDb string) any {
 		return fmt.Sprintf("'%v'", value)
 	}
 }
+
+func reviewLengthValues(tableName string) int {
+	db := Connect()
+
+	defer db.Close()
+
+	var count int
+	err := db.QueryRow(fmt.Sprintf("SELECT COUNT(*) FROM %s", tableName)).Scan(&count)
+
+	if err != nil {
+		logs.Fatal(err.Error())
+	}
+
+	return count
+}
+
+func insertSqlFunc(stringBk *strings.Builder, data []map[string]any, metadataTable []MetadataTable) string {
+	for i := 0; i < len(data); i++ {
+		info := data[i]
+		// var columnRaqSql strings.Builder
+		stringBk.WriteString("(")
+
+		for index, value := range metadataTable {
+			if _, ok := info[value.Field].(map[string]any); !ok {
+				cast := castValueByType(info[value.Field], value.Type)
+				stringBk.WriteString(fmt.Sprintf("%v ", cast))
+			}
+
+			if index == len(metadataTable)-1 {
+				stringBk.WriteString(")")
+			} else {
+				stringBk.WriteString(",")
+			}
+		}
+
+		if i != len(data)-1 {
+			stringBk.WriteString(",")
+		} else {
+			stringBk.WriteString(";")
+		}
+
+	}
+
+	return stringBk.String()
+}
+func dropTable(tableName string) error {
+	db := Connect()
+	defer db.Close()
+	_, err := db.Exec(fmt.Sprintf("DROP TABLE IF EXISTS %s;", tableName))
+	return err
+}

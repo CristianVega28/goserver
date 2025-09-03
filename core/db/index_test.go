@@ -165,42 +165,88 @@ func TestRawSqlForInsertIntoTable(t *testing.T) {
 
 	})
 
-	t.Run("Insert data when it's multiple records", func(t *testing.T) {
-		data := []map[string]any{
-			{
-				"id":            1,
-				"created_at":    "2023-10-01 12:00:00",
-				"message":       "Hello World",
-				"permalink_url": "http://example.com",
-			},
-			{
-				"id":            2,
-				"created_at":    "2023-10-02 13:00:00",
-				"message":       "Second Message",
-				"permalink_url": "http://example.org",
-			},
-		}
+	data := []map[string]any{
+		{
+			"id":            1,
+			"created_at":    "2023-10-01 12:00:00",
+			"message":       "Hello World",
+			"permalink_url": "http://example.com",
+		},
+		{
+			"id":            2,
+			"created_at":    "2023-10-02 13:00:00",
+			"message":       "Second Message",
+			"permalink_url": "http://example.org",
+		},
+	}
+	metadata := []MetadataTable{
+		{
+			Type:  "INTEGER",
+			Field: "id",
+		},
+		{
+			Type:  "DATETIME",
+			Field: "created_at",
+		},
+		{
+			Type:  "TEXT",
+			Field: "message",
+		},
+		{
+			Type:  "TEXT",
+			Field: "permalink_url",
+		},
+	}
 
-		metadata := []MetadataTable{
-			{
-				Type:  "INTEGER",
-				Field: "id",
-			},
-			{
-				Type:  "DATETIME",
-				Field: "created_at",
-			},
-			{
-				Type:  "TEXT",
-				Field: "message",
-			},
-			{
-				Type:  "TEXT",
-				Field: "permalink_url",
-			},
-		}
+	t.Run("Insert data when it's multiple records", func(t *testing.T) {
 		raw := InsertIntoTableRawSql("users", data, metadata)
 		assert.Equal(t, raw, "INSERT INTO users (id ,created_at ,message ,permalink_url ) VALUES (1 ,'2023-10-01 12:00:00' ,'Hello World' ,'http://example.com' ),(2 ,'2023-10-02 13:00:00' ,'Second Message' ,'http://example.org' );", "Raw SQL should match expected format")
+	})
+
+	t.Run("Insert data when the watcher triggers a reload and the primary key is already taken ", func(t *testing.T) {
+		//Before
+		err := dropTable("users")
+		if err != nil {
+			t.Error("Error dropping table users:", err)
+		}
+
+		conn := Connect()
+		defer conn.Close()
+
+		var migrationSchema Migration = Migration{
+			TableName: "users",
+			Fields: map[string]string{
+				"id":            "primary_key",
+				"created_at":    "datetime",
+				"message":       "text",
+				"permalink_url": "url|not_null",
+			},
+		}
+		ExecSqlTable(migrationSchema)
+
+		raw := InsertIntoTableRawSql("users", data, metadata)
+
+		_, err = conn.Exec(raw)
+
+		if err != nil {
+			t.Errorf("Error inserting data: %v", err)
+		}
+
+		//After
+
+		data = append(data, map[string]any{
+			"id":            2,
+			"created_at":    "2023-10-02 13:00:00",
+			"message":       "Second Message",
+			"permalink_url": "http://example.org",
+		})
+
+		raw = InsertIntoTableRawSql("users", data, metadata)
+
+		_, err = conn.Exec(raw)
+
+		assert.Equal(t, err != nil, true, "Error should not be nil because the primary key is already taken")
+
 	})
 }
 
