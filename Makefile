@@ -1,4 +1,5 @@
 APP_NAME = goserver
-
-build: 
 	
+VERSION = 1.0.0
+run:
+	go run watcher.go

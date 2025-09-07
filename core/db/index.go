@@ -18,8 +18,9 @@ type (
 		Fields    map[string]string // field and type
 	}
 	MetadataTable struct {
-		Type  string
-		Field string
+		Type       string
+		Field      string
+		Constraint []string
 	}
 	ValuesKey struct {
 		TableName       string // name of the table
@@ -175,13 +176,17 @@ func InsertIntoTableRawSql(tableName string, data []map[string]any, metadataTabl
 
 	insertSql.WriteString(") VALUES ")
 
+	log.Slice("Count existing rows", data)
 	count := reviewLengthValues(tableName)
 
 	if count == 0 {
+		fmt.Println(data)
 		return insertSqlFunc(&insertSql, data, metadataTable)
-	} else {
+	} else if count < len(data) {
 		dataBk := data[count:]
 		return insertSqlFunc(&insertSql, dataBk, metadataTable)
+	} else {
+		return ""
 	}
 }
 

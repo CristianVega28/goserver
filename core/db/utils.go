@@ -70,6 +70,12 @@ func reviewLengthValues(tableName string) int {
 
 	defer db.Close()
 
+	existable, _ := CheckAndTableInDatabase(tableName, db)
+
+	if !existable {
+		return 0
+	}
+
 	var count int
 	err := db.QueryRow(fmt.Sprintf("SELECT COUNT(*) FROM %s", tableName)).Scan(&count)
 

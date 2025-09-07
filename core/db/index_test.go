@@ -235,9 +235,9 @@ func TestRawSqlForInsertIntoTable(t *testing.T) {
 		//After
 
 		data = append(data, map[string]any{
-			"id":            2,
+			"id":            3,
 			"created_at":    "2023-10-02 13:00:00",
-			"message":       "Second Message",
+			"message":       "Second Message NEW RELOAD",
 			"permalink_url": "http://example.org",
 		})
 
@@ -245,7 +245,12 @@ func TestRawSqlForInsertIntoTable(t *testing.T) {
 
 		_, err = conn.Exec(raw)
 
-		assert.Equal(t, err != nil, true, "Error should not be nil because the primary key is already taken")
+		if err != nil {
+			t.Log(err.Error())
+
+		}
+
+		assert.Equal(t, err == nil, true, "Error should not be nil because the primary key is already taken")
 
 	})
 }

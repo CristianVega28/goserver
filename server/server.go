@@ -1,6 +1,7 @@
 package server
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -8,7 +9,6 @@ import (
 
 	"github.com/CristianVega28/goserver/core/middleware"
 	"github.com/CristianVega28/goserver/helpers"
-	"github.com/CristianVega28/goserver/utils"
 )
 
 type (
@@ -17,9 +17,6 @@ type (
 		Srv http.Server
 	}
 )
-
-var logs = utils.Logger{}
-var log = logs.Create()
 
 func (server *Server) NewServer() Server {
 	return Server{
@@ -43,13 +40,13 @@ func (server *Server) GenrateServer(data map[string]any) {
 				server.mux.HandleFunc(path, middleware.Chain(func(w http.ResponseWriter, r *http.Request) {
 					switch r.Method {
 					case http.MethodGet:
-						Get(w, r, nil, value)
+						Get(w, r, value)
 					case http.MethodPost:
-						Post(w, r, nil)
+						Post(w, r)
 					case http.MethodDelete:
-						Delete(w, r, nil)
+						Delete(w, r)
 					case http.MethodPut:
-						Put(w, r, nil)
+						Put(w, r)
 					}
 				}, middleware.Logging()))
 			case reflect.Map:
@@ -67,20 +64,20 @@ func (server *Server) GenrateServer(data map[string]any) {
 				var funcRequest http.HandlerFunc
 
 				funcRequest = middleware.Chain(func(w http.ResponseWriter, r *http.Request) {
+					ctx := context.WithValue(r.Context(), helpers.KeyCfg, cfg)
 					switch r.Method {
 					case http.MethodGet:
-						Get(w, r, &cfg, cfg.Response)
+						Get(w, r.WithContext(ctx), cfg.Response)
 					case http.MethodPost:
-						Post(w, r, &cfg)
+						Post(w, r.WithContext(ctx))
 					case http.MethodDelete:
-						Delete(w, r, &cfg)
+						Delete(w, r.WithContext(ctx))
 					case http.MethodPut:
-						Put(w, r, &cfg)
+						Put(w, r.WithContext(ctx))
 					}
 
 				})
 
-				// log.Structs("Configuracion cfg", cfg)
 				SetConfigurationServer(cfg)
 				server.mux.HandleFunc(path, funcRequest)
 
@@ -106,7 +103,7 @@ func SetConfigurationServer(cfg helpers.ConfigServerApi) {
 		// Here create the tables in database
 		model := helpers.MigrateSchema(cfg.Schema)
 		response := checkTypesForResponse(cfg.Response)
-		model.Insert(response)
+		model.InsertMigration(response)
 
 	}
 }

@@ -26,9 +26,11 @@ type (
 	ModelsI[T any] interface {
 		Select(id string) T
 		Insert(m any) error
+		InsertMigration(m any) error
 		Init() Models[T]
 		SetMetadataTable(fields []db.MetadataTable)
 		SetTableName(name string)
+		ValidateFields() map[string]string
 	}
 	DB struct {
 		Conn *sql.DB
@@ -43,25 +45,34 @@ func (base *Models[T]) Init() Models[T] {
 		conn: db.Connect(),
 	}
 }
-func (model *Models[T]) Insert(m any) error {
+func (model *Models[T]) InsertMigration(m any) error {
 	var rawSql string
 	if mapsInsert, ok := m.([]map[string]any); ok {
 		rawSql = db.InsertIntoTableRawSql(model.TableName, mapsInsert, model.Fields)
 	}
 
-	_, err := model.conn.Exec(rawSql)
-	if err != nil {
-		log.Fatal(err.Error())
-		return err
-	}
-	return nil
+	if rawSql != "" {
+		_, err := model.conn.Exec(rawSql)
+		if err != nil {
+			log.Fatal(err.Error())
+			return err
+		}
 
+	}
+
+	return nil
+}
+func (model *Models[T]) Insert(m any) error {
+	return nil
 }
 
 func (model *Models[T]) Select(id string) T {
 	var a T
-
 	return a
+}
+
+func (model *Models[T]) ValidateFields() map[string]string {
+	return nil
 }
 
 func (model *Models[T]) SetMetadataTable(fields []db.MetadataTable) {

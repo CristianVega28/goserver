@@ -1,7 +1,9 @@
 package utils
 
 import (
+	"fmt"
 	"os"
+	"runtime"
 	"time"
 
 	"github.com/rs/zerolog"
@@ -27,7 +29,8 @@ func (l *Logger) Create() Logger {
 }
 
 func (l *Logger) Fatal(message string) {
-	l.log.Fatal().Msg(message)
+	_, file, line, _ := runtime.Caller(1)
+	l.log.Fatal().Msg(fmt.Sprintf("Fatal: File %s - %d | Msg: %s", file, line, message))
 }
 
 func (l *Logger) Msg(message string) {
