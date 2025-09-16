@@ -161,7 +161,7 @@ func valueInKey(cfg ValuesKey) string {
 
 }
 
-func InsertIntoTableRawSql(tableName string, data []map[string]any, metadataTable []MetadataTable) string {
+func InsertIntoTableRawSql(tableName string, data []map[string]any, metadataTable []MetadataTable, isInsert bool) string {
 
 	var insertSql strings.Builder
 	insertSql.WriteString(fmt.Sprintf("INSERT INTO %s (", tableName))
@@ -178,6 +178,12 @@ func InsertIntoTableRawSql(tableName string, data []map[string]any, metadataTabl
 
 	log.Slice("Count existing rows", data)
 	count := reviewLengthValues(tableName)
+
+	fmt.Println(data)
+	if isInsert {
+		fmt.Println("is insert")
+		return insertSqlFunc(&insertSql, data, metadataTable)
+	}
 
 	if count == 0 {
 		fmt.Println(data)

@@ -1,6 +1,9 @@
 package server
 
 import (
+	"encoding/json"
+	"fmt"
+	"io"
 	"net/http"
 
 	"github.com/CristianVega28/goserver/core/models"
@@ -14,6 +17,9 @@ type (
 		PathKeywords string
 		Server       *http.ServeMux
 	}
+	StructPost struct {
+		Models any `json:"models"`
+	}
 )
 
 var helper helpers.Response = helpers.Response{}
@@ -25,6 +31,7 @@ func Get(w http.ResponseWriter, r *http.Request, values any) error {
 		helper.ResponseJson(w, values, http.StatusAccepted)
 		return nil
 	}
+
 	if valid := ValidationCfgMethod(r.Method, cfg.Request); !valid {
 		helper.ResponseJson(w, map[string]string{
 			"validated": "Method not allowed",
@@ -44,23 +51,42 @@ func Post(w http.ResponseWriter, r *http.Request) error {
 		}, http.StatusCreated)
 		return nil
 	}
+	if valid := ValidationCfgMethod(r.Method, cfg.Request); !valid {
+		helper.ResponseJson(w, map[string]string{
+			"validated": "Method not allowed",
+		}, http.StatusMethodNotAllowed)
+		return nil
+	}
 
 	modelBk := models.Models[map[string]any]{}
 	model := modelBk.Init()
 	metadata := cfg.ReturnMetadataTable()
 	model.SetMetadataTable(metadata)
+	model.SetTableName(cfg.Schema["table_name"].(string))
+	var body StructPost
+	err := json.NewDecoder(r.Body).Decode(&body)
 
-	errors := model.ValidateFields()
+	if err == io.EOF {
+		helper.ResponseJson(w, map[string]string{
+			"error": "body is empty",
+		}, http.StatusBadRequest)
+		return nil
+	}
+
+	fmt.Println(body.Models)
+	errors := model.ValidateFields(body.Models)
 
 	if len(errors) > 0 {
 		helper.ResponseJson(w, errors, http.StatusUnprocessableEntity)
 		return nil
 	}
+	response := checkTypesForResponse(body.Models)
+	errInsert := model.InsertMigration(response, true)
 
-	if valid := ValidationCfgMethod(r.Method, cfg.Request); !valid {
+	if errInsert != nil {
 		helper.ResponseJson(w, map[string]string{
-			"validated": "Method not allowed",
-		}, http.StatusMethodNotAllowed)
+			"error": errInsert.Error(),
+		}, http.StatusBadRequest)
 		return nil
 	}
 

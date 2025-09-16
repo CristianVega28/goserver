@@ -160,7 +160,7 @@ func TestRawSqlForInsertIntoTable(t *testing.T) {
 				Field: "is_active",
 			},
 		}
-		raw := InsertIntoTableRawSql("users", data, metadata)
+		raw := InsertIntoTableRawSql("users", data, metadata, false)
 		assert.Equal(t, raw, "INSERT INTO users (id ,created_at ,message ,permalink_url ,is_active ) VALUES (1 ,'2023-10-01 12:00:00' ,'Hello World' ,'http://example.com' ,true );", "Raw SQL should match expected format")
 
 	})
@@ -199,7 +199,7 @@ func TestRawSqlForInsertIntoTable(t *testing.T) {
 	}
 
 	t.Run("Insert data when it's multiple records", func(t *testing.T) {
-		raw := InsertIntoTableRawSql("users", data, metadata)
+		raw := InsertIntoTableRawSql("users", data, metadata, false)
 		assert.Equal(t, raw, "INSERT INTO users (id ,created_at ,message ,permalink_url ) VALUES (1 ,'2023-10-01 12:00:00' ,'Hello World' ,'http://example.com' ),(2 ,'2023-10-02 13:00:00' ,'Second Message' ,'http://example.org' );", "Raw SQL should match expected format")
 	})
 
@@ -224,7 +224,7 @@ func TestRawSqlForInsertIntoTable(t *testing.T) {
 		}
 		ExecSqlTable(migrationSchema)
 
-		raw := InsertIntoTableRawSql("users", data, metadata)
+		raw := InsertIntoTableRawSql("users", data, metadata, false)
 
 		_, err = conn.Exec(raw)
 
@@ -241,7 +241,7 @@ func TestRawSqlForInsertIntoTable(t *testing.T) {
 			"permalink_url": "http://example.org",
 		})
 
-		raw = InsertIntoTableRawSql("users", data, metadata)
+		raw = InsertIntoTableRawSql("users", data, metadata, false)
 
 		_, err = conn.Exec(raw)
 

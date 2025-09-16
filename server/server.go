@@ -103,7 +103,7 @@ func SetConfigurationServer(cfg helpers.ConfigServerApi) {
 		// Here create the tables in database
 		model := helpers.MigrateSchema(cfg.Schema)
 		response := checkTypesForResponse(cfg.Response)
-		model.InsertMigration(response)
+		model.InsertMigration(response, false)
 
 	}
 }
