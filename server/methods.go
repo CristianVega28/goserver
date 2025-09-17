@@ -46,14 +46,15 @@ func Post(w http.ResponseWriter, r *http.Request) error {
 	cfg, ok := r.Context().Value(helpers.KeyCfg).(helpers.ConfigServerApi)
 
 	if !ok {
-		helper.ResponseJson(w, map[string]string{
-			"status": "created",
-		}, http.StatusCreated)
+		helper.ResponseJson(w, map[string]any{
+			"success": false,
+		}, http.StatusInternalServerError)
 		return nil
 	}
 	if valid := ValidationCfgMethod(r.Method, cfg.Request); !valid {
-		helper.ResponseJson(w, map[string]string{
-			"validated": "Method not allowed",
+		helper.ResponseJson(w, map[string]any{
+			"success": false,
+			"error":   "Method not allowed",
 		}, http.StatusMethodNotAllowed)
 		return nil
 	}
@@ -67,13 +68,13 @@ func Post(w http.ResponseWriter, r *http.Request) error {
 	err := json.NewDecoder(r.Body).Decode(&body)
 
 	if err == io.EOF {
-		helper.ResponseJson(w, map[string]string{
-			"error": "body is empty",
+		helper.ResponseJson(w, map[string]any{
+			"success": false,
+			"error":   "body is empty",
 		}, http.StatusBadRequest)
 		return nil
 	}
 
-	fmt.Println(body.Models)
 	errors := model.ValidateFields(body.Models)
 
 	if len(errors) > 0 {
@@ -89,9 +90,11 @@ func Post(w http.ResponseWriter, r *http.Request) error {
 		}, http.StatusBadRequest)
 		return nil
 	}
+	description := fmt.Sprintf("Inserted %d rows", len(response))
 
-	helper.ResponseJson(w, map[string]string{
-		"status": "created",
+	helper.ResponseJson(w, map[string]any{
+		"success": true,
+		"status":  description,
 	}, http.StatusCreated)
 	return nil
 }

@@ -26,9 +26,16 @@ func (cfg *ConfigServerApi) ReturnMetadataTable() []db.MetadataTable {
 	for key, value := range cfg.Schema {
 		var metaType string
 
-		if typeValue, ok := value.(string); ok {
+		if key == "table_name" {
+			continue
+		}
 
-			metaType, _, _ = db.PublicParserColumnsFields(typeValue)
+		if typeValue, ok := value.(string); ok {
+			if typeValue == "primary_key" {
+				metaType = "INTEGER"
+			} else {
+				metaType, _, _ = db.PublicParserColumnsFields(typeValue)
+			}
 		}
 
 		metadata = append(metadata, db.MetadataTable{

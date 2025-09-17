@@ -48,14 +48,9 @@ func (base *Models[T]) Init() Models[T] {
 }
 func (model *Models[T]) InsertMigration(m any, isInsert bool) error {
 	var rawSql string
-	fmt.Println(isInsert)
-	fmt.Println(m)
 	if mapsInsert, ok := m.([]map[string]any); ok {
-
-		fmt.Println("okeeeee")
 		rawSql = db.InsertIntoTableRawSql(model.TableName, mapsInsert, model.Fields, isInsert)
 	}
-	fmt.Println(rawSql)
 
 	if rawSql != "" {
 		_, err := model.conn.Exec(rawSql)
