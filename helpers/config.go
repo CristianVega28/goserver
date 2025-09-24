@@ -17,6 +17,13 @@ type (
 	}
 
 	ConfigKeyContext struct{}
+
+	ResponseConfig struct {
+		Path          string         `json:"path"`
+		Request       []string       `json:"request"`
+		MiddlewareApi MiddlewareApi  `json:"middleware"`
+		Schema        map[string]any `json:"schema"`
+	}
 )
 
 var KeyCfg = ConfigKeyContext{}

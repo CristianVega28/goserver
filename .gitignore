@@ -2,4 +2,6 @@
 *.db
 *.sqlite
 *.exe
+docs/
+public/
 /tmp

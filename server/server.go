@@ -9,6 +9,7 @@ import (
 
 	"github.com/CristianVega28/goserver/core/middleware"
 	"github.com/CristianVega28/goserver/helpers"
+	"github.com/rs/cors"
 )
 
 type (
@@ -28,6 +29,12 @@ func (server *Server) NewServer() Server {
 func (server *Server) GenrateServer(data map[string]any) {
 
 	response := helpers.Response{}
+	c := cors.New(cors.Options{
+		AllowedOrigins: []string{"*"}, // o ej: []string{"http://localhost:4321"}
+		AllowedMethods: []string{"*"},
+		// AllowedHeaders:   []string{"Content-Type", "Authorization"},
+		AllowCredentials: true,
+	})
 
 	if len(data) != 0 {
 		for key, value := range data {
@@ -91,7 +98,21 @@ func (server *Server) GenrateServer(data map[string]any) {
 		}, http.StatusAccepted)
 	})
 
-	server.Srv.Handler = server.mux
+	server.mux.HandleFunc("/docs", func(w http.ResponseWriter, r *http.Request) {
+		http.ServeFile(w, r, "public/index.html")
+	})
+
+	server.mux.HandleFunc("/docs-api", func(w http.ResponseWriter, r *http.Request) {
+
+
+		response.ResponseJson(w, map[string]any{
+			"success": true,
+			"data":    ,
+		}, http.StatusOK)
+	})
+
+	hadler := c.Handler(server.mux)
+	server.Srv.Handler = hadler
 
 	server.Srv.ListenAndServe()
 }
