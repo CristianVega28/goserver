@@ -31,10 +31,11 @@ func (server *Server) GenrateServer(data map[string]any) {
 	response := helpers.Response{}
 	c := cors.New(cors.Options{
 		AllowedOrigins: []string{"*"}, // o ej: []string{"http://localhost:4321"}
-		AllowedMethods: []string{"*"},
+		// AllowedMethods: []string{"*"},
 		// AllowedHeaders:   []string{"Content-Type", "Authorization"},
-		AllowCredentials: true,
+		// AllowCredentials: true,
 	})
+	var arrCfgResponse []helpers.ResponseConfig
 
 	if len(data) != 0 {
 		for key, value := range data {
@@ -44,6 +45,11 @@ func (server *Server) GenrateServer(data map[string]any) {
 			switch typeValue.Kind() {
 			case reflect.Slice:
 				// it create GET, POST , DELETE, PUT
+				rspCfg := helpers.ResponseConfig{
+					Path:    path,
+					Request: []string{"*"},
+				}
+				arrCfgResponse = append(arrCfgResponse, rspCfg)
 				server.mux.HandleFunc(path, middleware.Chain(func(w http.ResponseWriter, r *http.Request) {
 					switch r.Method {
 					case http.MethodGet:
@@ -68,6 +74,13 @@ func (server *Server) GenrateServer(data map[string]any) {
 					continue
 				}
 
+				rspCfg := helpers.ResponseConfig{
+					Path:    path,
+					Request: cfg.Request,
+					Schema:  cfg.Schema,
+				}
+
+				arrCfgResponse = append(arrCfgResponse, rspCfg)
 				var funcRequest http.HandlerFunc
 
 				funcRequest = middleware.Chain(func(w http.ResponseWriter, r *http.Request) {
@@ -104,15 +117,14 @@ func (server *Server) GenrateServer(data map[string]any) {
 
 	server.mux.HandleFunc("/docs-api", func(w http.ResponseWriter, r *http.Request) {
 
-
 		response.ResponseJson(w, map[string]any{
 			"success": true,
-			"data":    ,
+			"data":    arrCfgResponse,
 		}, http.StatusOK)
 	})
 
-	hadler := c.Handler(server.mux)
-	server.Srv.Handler = hadler
+	handler := c.Handler(server.mux)
+	server.Srv.Handler = handler
 
 	server.Srv.ListenAndServe()
 }
