@@ -3,5 +3,4 @@
 *.sqlite
 *.exe
 docs/
-public/
 /tmp
