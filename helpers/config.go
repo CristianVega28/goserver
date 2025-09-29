@@ -1,6 +1,9 @@
 package helpers
 
-import "github.com/CristianVega28/goserver/core/db"
+import (
+	"github.com/CristianVega28/goserver/core/db"
+	"github.com/samber/lo"
+)
 
 type (
 	ConfigServerApi struct {
@@ -52,4 +55,45 @@ func (cfg *ConfigServerApi) ReturnMetadataTable() []db.MetadataTable {
 	}
 
 	return metadata
+}
+
+// Helper to know if the schema (database) exist
+func (cfg *ConfigServerApi) ExistSchema() bool {
+	var tableNames []string
+	var TrueDatabases []bool
+
+	if cfg.Schema != nil {
+		tableNames = extractTableName(cfg.Schema)
+	}
+
+	conn := db.Connect()
+
+	defer conn.Close()
+
+	for _, v := range tableNames {
+		existTable, _ := db.CheckAndTableInDatabase(v, conn)
+		TrueDatabases = append(TrueDatabases, existTable)
+	}
+
+	return lo.EveryBy(TrueDatabases, func(item bool) bool {
+		return item
+	})
+}
+
+func extractTableName(mapSchema map[string]any) []string {
+	var tableNameVar []string
+	var tableNameInternal []string
+	for index, v := range mapSchema {
+		if index == "table_name" {
+			tableNameVar = append(tableNameVar, v.(string))
+			break
+		}
+
+		if vMap, ok := v.(map[string]any); ok {
+			tableNameInternal = extractTableName(vMap)
+		}
+	}
+
+	tableNameVar = append(tableNameVar, tableNameInternal...)
+	return tableNameVar
 }

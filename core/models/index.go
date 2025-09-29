@@ -28,6 +28,7 @@ type (
 		Select(id string) T
 		Insert(m any) error
 		InsertMigration(m any, isInsert bool) error
+		SelectAll() []T
 		Init() Models[T]
 		SetMetadataTable(fields []db.MetadataTable)
 		SetTableName(name string)
@@ -73,6 +74,48 @@ func (model *Models[T]) Insert(m any) error {
 func (model *Models[T]) Select(id string) T {
 	var a T
 	return a
+}
+
+func (model *Models[T]) SelectAll() []map[string]any {
+
+	var valuesArr []map[string]any
+	rows, err := model.conn.Query("SELECT * FROM " + model.TableName)
+
+	if err != nil {
+		log.Fatal(err.Error())
+	}
+
+	defer rows.Close()
+
+	cols, err := rows.Columns()
+
+	if err != nil {
+		log.Fatal(err.Error())
+	}
+
+	for rows.Next() {
+		values := make([]interface{}, len(cols))
+		valuePtrs := make([]interface{}, len(cols))
+		for i := range cols {
+			valuePtrs[i] = &values[i]
+		}
+
+		// 2. Escanear la fila
+		if err := rows.Scan(valuePtrs...); err != nil {
+			log.Fatal(err.Error())
+		}
+
+		// 3. Crear map columna → valor
+		rowMap := make(map[string]any)
+		for i, col := range cols {
+			rowMap[col] = values[i]
+		}
+
+		// 4. Mostrar resultado
+		valuesArr = append(valuesArr, rowMap)
+	}
+
+	return valuesArr
 }
 
 func (model *Models[T]) ValidateFields(bodyR any) map[string]any {

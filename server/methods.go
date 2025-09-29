@@ -38,6 +38,15 @@ func Get(w http.ResponseWriter, r *http.Request, values any) error {
 		}, http.StatusMethodNotAllowed)
 		return nil
 	}
+	if cfg.ExistSchema() {
+		modelBk := models.Models[map[string]any]{}
+		model := modelBk.Init()
+		model.SetTableName(cfg.Schema["table_name"].(string))
+		response := model.SelectAll()
+		helper.ResponseJson(w, response, http.StatusAccepted)
+
+		return nil
+	}
 
 	helper.ResponseJson(w, values, http.StatusAccepted)
 	return nil

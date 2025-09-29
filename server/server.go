@@ -47,7 +47,7 @@ func (server *Server) GenrateServer(data map[string]any) {
 				// it create GET, POST , DELETE, PUT
 				rspCfg := helpers.ResponseConfig{
 					Path:    path,
-					Request: []string{"*"},
+					Request: []string{"GET", "POST", "DELETE", "PUT"},
 				}
 				arrCfgResponse = append(arrCfgResponse, rspCfg)
 				server.mux.HandleFunc(path, middleware.Chain(func(w http.ResponseWriter, r *http.Request) {
@@ -114,6 +114,7 @@ func (server *Server) GenrateServer(data map[string]any) {
 	server.mux.HandleFunc("/docs", func(w http.ResponseWriter, r *http.Request) {
 		http.ServeFile(w, r, "public/index.html")
 	})
+	server.mux.Handle("/", http.StripPrefix("/", http.FileServer(http.Dir("public/"))))
 
 	server.mux.HandleFunc("/docs-api", func(w http.ResponseWriter, r *http.Request) {
 
