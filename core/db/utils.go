@@ -3,9 +3,12 @@ package db
 import (
 	"fmt"
 	"strings"
+
+	"github.com/CristianVega28/goserver/utils"
 )
 
 /*
+	Example: varchar,255|not_null
 	return (
 		type string,
 		size string,
@@ -59,8 +62,15 @@ func constraintByDatabase(constraint string) string {
 func castValueByType(value any, typeDb string) any {
 	switch strings.ToUpper(typeDb) {
 	case "INTEGER", "REAL", "BOOLEAN":
+		if utils.IsNil(value) {
+			return "NULL"
+		}
 		return value
 	default:
+		if utils.IsNil(value) {
+			return "NULL"
+		}
+
 		return fmt.Sprintf("'%v'", value)
 	}
 }

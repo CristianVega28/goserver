@@ -12,15 +12,24 @@ import (
 )
 
 type (
+
 	//struct in charge to create/modify a table
 	Migration struct {
 		TableName string
 		Fields    map[string]string // field and type
+		Foreigns  []ForeignKey
 	}
 	MetadataTable struct {
 		Type       string
 		Field      string
 		Constraint []string
+	}
+	ForeignKey struct {
+		Field          string
+		ReferenceTable string
+		ReferenceField string
+		OnDelete       string
+		OnUpdate       string
 	}
 	ValuesKey struct {
 		TableName       string // name of the table
@@ -41,8 +50,7 @@ func ExecSqlTable(mgn Migration) {
 	conn := Connect()
 
 	defer conn.Close()
-
-	sqlString := parserFieldsToSql(mgn.TableName, mgn.Fields, conn)
+	sqlString := parserFieldsToSql(mgn.TableName, mgn.Fields, conn, mgn.Foreigns)
 	_, err := conn.Exec(sqlString)
 
 	if err != nil {
@@ -54,7 +62,7 @@ func ExecSqlTable(mgn Migration) {
 	key: type,size|constraint
 */
 
-func parserFieldsToSql(tableName string, fields map[string]string, conn *sql.DB) string {
+func parserFieldsToSql(tableName string, fields map[string]string, conn *sql.DB, foreigns []ForeignKey) string {
 	var tableSQL strings.Builder
 
 	existsTable, columns := CheckAndTableInDatabase(tableName, conn)
@@ -79,7 +87,7 @@ func parserFieldsToSql(tableName string, fields map[string]string, conn *sql.DB)
 
 			format := valueInKey(cfgValuesKey)
 
-			if index == (len(fields) - 1) {
+			if index == (len(fields)-1) && len(foreigns) == 0 {
 				format = strings.Replace(format, ", \n", " \n", 1)
 			}
 
@@ -88,6 +96,12 @@ func parserFieldsToSql(tableName string, fields map[string]string, conn *sql.DB)
 			index++
 
 		}
+
+		if len(foreigns) > 0 {
+			fkString := valuesInForeignKey(foreigns)
+			tableSQL.WriteString(fkString)
+		}
+
 		tableSQL.WriteString(");")
 
 	} else {
@@ -161,6 +175,16 @@ func valueInKey(cfg ValuesKey) string {
 
 }
 
+func valuesInForeignKey(foreigns []ForeignKey) string {
+	var toSql strings.Builder
+
+	for _, fk := range foreigns {
+		toSql.WriteString(fmt.Sprintf("FOREIGN KEY (%s) REFERENCES %s(%s)", fk.Field, fk.ReferenceTable, fk.ReferenceField))
+	}
+
+	return toSql.String()
+}
+
 func InsertIntoTableRawSql(tableName string, data []map[string]any, metadataTable []MetadataTable, isInsert bool) string {
 
 	var insertSql strings.Builder
@@ -205,6 +229,12 @@ func Connect() *sql.DB {
 		log.Fatal("Failed to ping the database: " + errPing.Error())
 	} else {
 		log.Msg("Connected to the database (SQLite)")
+	}
+
+	_, err = db.Exec("PRAGMA foreign_keys = ON;")
+
+	if err != nil {
+		log.Fatal("Failed to ping the database: " + err.Error())
 	}
 
 	return db

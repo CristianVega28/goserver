@@ -19,9 +19,10 @@ type (
 	}
 
 	Models[T any] struct {
-		conn      *sql.DB
-		TableName string
-		Fields    []db.MetadataTable
+		conn       *sql.DB
+		TableName  string
+		Fields     []db.MetadataTable
+		PrimaryKey string
 	}
 
 	ModelsI[T any] interface {
@@ -32,6 +33,9 @@ type (
 		Init() Models[T]
 		SetMetadataTable(fields []db.MetadataTable)
 		SetTableName(name string)
+		GetTableName() string
+		SetPrimaryKey(key string)
+		GetPrimaryKey() string
 		ValidateFields(bodyR any) map[string]any
 	}
 	DB struct {
@@ -150,4 +154,15 @@ func (model *Models[T]) SetMetadataTable(fields []db.MetadataTable) {
 }
 func (model *Models[T]) SetTableName(name string) {
 	model.TableName = name
+}
+func (model *Models[T]) GetTableName() string {
+	return model.TableName
+}
+
+func (model *Models[T]) SetPrimaryKey(pk string) {
+	model.PrimaryKey = pk
+}
+
+func (model *Models[T]) GetPrimaryKey() string {
+	return model.PrimaryKey
 }

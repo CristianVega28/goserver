@@ -15,6 +15,7 @@ func MigrateSchema(schema map[string]any) models.ModelsI[map[string]any] {
 	var base models.ModelsI[map[string]any] = &models.Models[map[string]any]{}
 	model := base.Init()
 	metadata := []db.MetadataTable{}
+	var otherForeign []db.ForeignKey
 	fields := make(map[string]string)
 	for key, value := range schema {
 		var metaType string
@@ -26,15 +27,30 @@ func MigrateSchema(schema map[string]any) models.ModelsI[map[string]any] {
 			}
 			continue
 		}
-
-		if nested, ok := value.(map[string]any); ok {
-			MigrateSchema(nested)
-		}
-
 		if typeValue, ok := value.(string); ok {
 			fields[key] = typeValue
-
 			metaType, _, _ = db.PublicParserColumnsFields(typeValue)
+			if metaType == "primary_key" {
+				model.SetPrimaryKey(key)
+			}
+		}
+
+		if nested, ok := value.(map[string]any); ok {
+			om := MigrateSchema(nested)
+			foreginId := om.GetTableName() + "_id"
+
+			otherForeign = append(otherForeign, db.ForeignKey{
+				Field:          foreginId,
+				ReferenceTable: om.GetTableName(),
+				ReferenceField: om.GetPrimaryKey(),
+			})
+
+			metadata = append(metadata, db.MetadataTable{
+				Type:  "integer",
+				Field: foreginId,
+			})
+			fields[foreginId] = "integer"
+			continue
 		}
 
 		metadata = append(metadata, db.MetadataTable{
@@ -45,6 +61,8 @@ func MigrateSchema(schema map[string]any) models.ModelsI[map[string]any] {
 
 	migration.Fields = fields
 	model.SetMetadataTable(metadata)
+
+	migration.Foreigns = otherForeign
 
 	db.ExecSqlTable(migration)
 

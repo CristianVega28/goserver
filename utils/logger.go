@@ -41,6 +41,7 @@ func (l *Logger) Everyone(message string, maps any) {
 	l.log.Info().Fields(maps).Msg(message)
 }
 
+// Structs and slice logs
 func (l *Logger) Structs(message string, structs any) {
 	l.log.Info().Interface("obj", structs).Msg(message)
 }

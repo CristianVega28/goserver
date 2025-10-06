@@ -1,6 +1,7 @@
 package db
 
 import (
+	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -69,6 +70,24 @@ func TestParserFieldsForCreatingTable(t *testing.T) {
 	})
 }
 
+func TestParserFieldsForCreatingTableWithForeignId(t *testing.T) {
+	//Schema of api.json
+	raw := map[string]any{
+		"tableName":    "posts",
+		"id":           "primary_key",
+		"created_time": "datetime",
+		"from": map[string]any{
+			"table_name": "users",
+			"id":         "string",
+			"name":       "string",
+		},
+		"message":       "text",
+		"permalink_url": "url|not_null",
+	}
+
+	fmt.Println(raw)
+}
+
 func TestVerifyCreateTableWithValueKeyFunction(t *testing.T) {
 
 	t.Run("Create table users with valueKey function", func(t *testing.T) {
@@ -84,7 +103,7 @@ func TestVerifyCreateTableWithValueKeyFunction(t *testing.T) {
 			},
 		}
 
-		sqlString := parserFieldsToSql(migrationSchema.TableName, migrationSchema.Fields, conn)
+		sqlString := parserFieldsToSql(migrationSchema.TableName, migrationSchema.Fields, conn, nil)
 
 		_, err := conn.Exec(sqlString)
 
@@ -114,7 +133,7 @@ func TestVerifyCreateTableWithValueKeyFunction(t *testing.T) {
 			},
 		}
 
-		sqlString := parserFieldsToSql(migrationSchema.TableName, migrationSchema.Fields, conn)
+		sqlString := parserFieldsToSql(migrationSchema.TableName, migrationSchema.Fields, conn, nil)
 		t.Log("SQL String", sqlString)
 
 		_, err := conn.Exec(sqlString)
