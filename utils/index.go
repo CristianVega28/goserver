@@ -1,6 +1,9 @@
 package utils
 
-import "reflect"
+import (
+	"errors"
+	"reflect"
+)
 
 func IsNil(i interface{}) bool {
 	if i == nil {
@@ -12,4 +15,18 @@ func IsNil(i interface{}) bool {
 		return v.IsNil()
 	}
 	return false
+}
+func CheckTypesForResponse(value any) ([]map[string]any, error) {
+	var response = make([]map[string]any, 0)
+	if arr, ok := value.([]any); ok {
+		for _, v := range arr {
+			if m, ok := v.(map[string]any); ok {
+				response = append(response, m)
+			}
+		}
+	} else {
+		return nil, errors.New("invalid type for response, expected []map[string]any")
+	}
+
+	return response, nil
 }

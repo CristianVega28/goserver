@@ -37,6 +37,13 @@ func (cfg *ConfigServerApi) ReturnMetadataTable() []db.MetadataTable {
 		var metaType string
 
 		if key == "table_name" {
+			fks := db.ForeignKeysTable(value.(string))
+			for _, v := range fks {
+				metadata = append(metadata, db.MetadataTable{
+					Type:  "INTEGER",
+					Field: v,
+				})
+			}
 			continue
 		}
 
@@ -48,6 +55,9 @@ func (cfg *ConfigServerApi) ReturnMetadataTable() []db.MetadataTable {
 			}
 		}
 
+		if _, ok := value.(map[string]any); ok {
+			continue
+		}
 		metadata = append(metadata, db.MetadataTable{
 			Type:  metaType,
 			Field: key,

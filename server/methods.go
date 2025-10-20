@@ -90,8 +90,9 @@ func Post(w http.ResponseWriter, r *http.Request) error {
 		helper.ResponseJson(w, errors, http.StatusUnprocessableEntity)
 		return nil
 	}
-	response := checkTypesForResponse(body.Models)
-	errInsert := model.InsertMigration(response, true)
+
+	model.SetResponse(body.Models)
+	errInsert := model.InsertMigration(true)
 
 	if errInsert != nil {
 		helper.ResponseJson(w, map[string]string{
@@ -99,7 +100,7 @@ func Post(w http.ResponseWriter, r *http.Request) error {
 		}, http.StatusBadRequest)
 		return nil
 	}
-	description := fmt.Sprintf("Inserted %d rows", len(response))
+	description := fmt.Sprintf("Inserted %d rows", len(model.GetResponse()))
 
 	helper.ResponseJson(w, map[string]any{
 		"success": true,

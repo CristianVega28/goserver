@@ -2,6 +2,8 @@ package main
 
 import (
 	"os"
+	"os/signal"
+	"syscall"
 
 	"github.com/CristianVega28/goserver/core"
 	"github.com/CristianVega28/goserver/core/middleware"
@@ -27,10 +29,16 @@ func main() {
 	// var modelsvar models.Models = models.Models{}
 	// modelsvar.Init()
 	// models.Migration()
+	sign := make(chan os.Signal, 1)
+
+	signal.Notify(sign, os.Interrupt, syscall.SIGINT, syscall.SIGTERM)
 	go func() {
 		exec.Run()
 	}()
 	// Canal para capturar señal de interrupción
 
-	select {}
+	select {
+	case <-sign:
+		os.Exit(0)
+	}
 }

@@ -227,8 +227,6 @@ func Connect() *sql.DB {
 	errPing := db.Ping()
 	if errPing != nil {
 		log.Fatal("Failed to ping the database: " + errPing.Error())
-	} else {
-		log.Msg("Connected to the database (SQLite)")
 	}
 
 	_, err = db.Exec("PRAGMA foreign_keys = ON;")
@@ -279,3 +277,28 @@ func CheckAndTableInDatabase(name string, conn *sql.DB) (bool, []string) {
 
 	return existTable, cols
 }
+
+func ForeignKeysTable(nameTable string) []string {
+
+	var foreignKeys []string
+	conn := Connect()
+
+	defer conn.Close()
+
+	rows, err := conn.Query(fmt.Sprintf(`SELECT "from" FROM pragma_foreign_key_list('%s')`, nameTable))
+
+	if err != nil {
+		log.Fatal(err.Error())
+	}
+
+	for rows.Next() {
+		var fk string
+		rows.Scan(&fk)
+		foreignKeys = append(foreignKeys, fk)
+	}
+
+	return foreignKeys
+
+}
+func (fgn *ForeignKey) SetId(id string) {}
+func (fgn *ForeignKey) GetId()          {}

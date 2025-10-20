@@ -50,6 +50,8 @@ func MigrateSchema(schema map[string]any) models.ModelsI[map[string]any] {
 				Field: foreginId,
 			})
 			fields[foreginId] = "integer"
+			model.AddModels(om.Init())
+			model.SetResponse(value)
 			continue
 		}
 

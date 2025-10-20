@@ -19,16 +19,18 @@ type (
 	}
 
 	Models[T any] struct {
-		conn       *sql.DB
-		TableName  string
-		Fields     []db.MetadataTable
-		PrimaryKey string
+		conn        *sql.DB
+		TableName   string
+		Fields      []db.MetadataTable
+		PrimaryKey  string
+		OtherModels []Models[T]
+		Response    []map[string]any
 	}
 
 	ModelsI[T any] interface {
 		Select(id string) T
 		Insert(m any) error
-		InsertMigration(m any, isInsert bool) error
+		InsertMigration(isInsert bool) error
 		SelectAll() []T
 		Init() Models[T]
 		SetMetadataTable(fields []db.MetadataTable)
@@ -37,6 +39,9 @@ type (
 		SetPrimaryKey(key string)
 		GetPrimaryKey() string
 		ValidateFields(bodyR any) map[string]any
+		AddModels(m Models[T])
+		GetResponse() []map[string]any
+		SetResponse(res any)
 	}
 	DB struct {
 		Conn *sql.DB
@@ -48,14 +53,14 @@ var log = looger.Create()
 
 func (base *Models[T]) Init() Models[T] {
 	return Models[T]{
-		conn: db.Connect(),
+		conn:        db.Connect(),
+		OtherModels: []Models[T]{},
 	}
 }
-func (model *Models[T]) InsertMigration(m any, isInsert bool) error {
+func (model *Models[T]) InsertMigration(isInsert bool) error {
 	var rawSql string
-	if mapsInsert, ok := m.([]map[string]any); ok {
-		rawSql = db.InsertIntoTableRawSql(model.TableName, mapsInsert, model.Fields, isInsert)
-	}
+	response := model.GetResponse()
+	rawSql = db.InsertIntoTableRawSql(model.TableName, response, model.Fields, isInsert)
 
 	if rawSql != "" {
 		_, err := model.conn.Exec(rawSql)
@@ -165,4 +170,17 @@ func (model *Models[T]) SetPrimaryKey(pk string) {
 
 func (model *Models[T]) GetPrimaryKey() string {
 	return model.PrimaryKey
+}
+
+func (model *Models[T]) AddModels(m Models[T]) {
+	model.OtherModels = append(model.OtherModels, m)
+}
+
+func (model *Models[T]) GetResponse() []map[string]any {
+	return model.Response
+}
+
+func (model *Models[T]) SetResponse(res any) {
+	response, _ := utils.CheckTypesForResponse(res)
+	model.Response = response
 }
