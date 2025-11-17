@@ -219,7 +219,7 @@ func execution(enviroment string, watcher WatcherI) (children *exec.Cmd) {
 		pathTmpFull := filepath.Join(pathTmp, "main.exe")
 		arrayMainFile = []string{"build", "-o", pathTmpFull, "main.go"}
 	} else if enviroment == "production" {
-		arrayMainFile = []string{filepath.Join("main.exe")} // check out about the os of user
+		arrayMainFile = []string{filepath.Join("./main")} // check out about the os of user
 	}
 
 	args := []string{

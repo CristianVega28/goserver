@@ -2,16 +2,13 @@ package middleware
 
 import (
 	"net/http"
-	"os"
-	"path/filepath"
-	"strings"
+
+	"github.com/CristianVega28/goserver/helpers"
 )
 
 type (
 	MiddlewareFunction func(w http.HandlerFunc) http.HandlerFunc
 	MapMiddleware      map[string][]MiddlewareFunction
-
-	// helper helpers.Response{}
 )
 
 func Chain(f http.HandlerFunc, middleware ...MiddlewareFunction) http.HandlerFunc {
@@ -22,51 +19,55 @@ func Chain(f http.HandlerFunc, middleware ...MiddlewareFunction) http.HandlerFun
 	return f
 }
 
-func FunctionsAuthMiddleware() []MiddlewareFunction {
+func FunctionsAuthMiddleware(key string) MiddlewareFunction {
 	authmid := AuthMiddleware{}
-	return []MiddlewareFunction{
-		authmid.BasicAuth,
-		authmid.BearerToken,
-		authmid.Jwt,
+	var mf MiddlewareFunction
+	if key == "basic_auth" {
+		mf = authmid.BasicAuth()
 	}
+
+	if key == "bearer" {
+		mf = authmid.BearerToken()
+	}
+
+	if key == "jwt" {
+		mf = authmid.Jwt()
+	}
+
+	return mf
 }
 
-func FunctionsSecurityMiddleware() []MiddlewareFunction {
+func FunctionsSecurityMiddleware(keys []string) []MiddlewareFunction {
 	securitymid := SecurityMiddleware{}
-	return []MiddlewareFunction{
-		securitymid.Cors,
-		securitymid.Csrf,
-		securitymid.RateLimit,
-	}
-}
-
-func CreateMapMiddleware() MapMiddleware {
-	entries := nameMiddlewareFromDirectories()
-	mappingMiddleware := make(MapMiddleware)
-
-	for _, file := range entries {
-		name := strings.Split(file.Name(), ".")[0]
-		switch name {
-		case "auth":
-			mappingMiddleware[name] = FunctionsAuthMiddleware()
-
-		case "security":
-			mappingMiddleware[name] = FunctionsSecurityMiddleware()
-
+	var arraySecurity []MiddlewareFunction
+	for _, v := range keys {
+		if v == "cors" {
+			arraySecurity = append(arraySecurity, securitymid.Cors())
 		}
+		if v == "csrf" {
+			arraySecurity = append(arraySecurity, securitymid.Csrf())
+		}
+		if v == "rate_limit" {
+			arraySecurity = append(arraySecurity, securitymid.RateLimit())
+		}
+
 	}
-	return mappingMiddleware
+
+	return arraySecurity
 }
 
-func nameMiddlewareFromDirectories() []os.DirEntry {
-	cwd, err := os.Getwd()
+func ReturnArraysMiddleware(cfg helpers.ConfigServerApi) []MiddlewareFunction {
+	var arrMiddleware []MiddlewareFunction
 
-	if err != nil {
-		panic(err)
+	if cfg.MiddlewareApi.Security != nil {
+		securityMiddleware := FunctionsSecurityMiddleware(cfg.MiddlewareApi.Security)
+		arrMiddleware = append(arrMiddleware, securityMiddleware...)
 	}
 
-	pathMiddleware := filepath.Join(cwd, "/../../core/middleware")
-	filesMiddleware, _ := os.ReadDir(pathMiddleware)
+	if cfg.MiddlewareApi.Auth != "" {
+		authMiddleware := FunctionsAuthMiddleware(cfg.MiddlewareApi.Auth)
+		arrMiddleware = append(arrMiddleware, authMiddleware)
+	}
 
-	return filesMiddleware
+	return arrMiddleware
 }

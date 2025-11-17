@@ -83,6 +83,8 @@ func (server *Server) GenrateServer(data map[string]any) {
 				arrCfgResponse = append(arrCfgResponse, rspCfg)
 				var funcRequest http.HandlerFunc
 
+				arrMiddleware := middleware.ReturnArraysMiddleware(cfg)
+
 				funcRequest = middleware.Chain(func(w http.ResponseWriter, r *http.Request) {
 					ctx := context.WithValue(r.Context(), helpers.KeyCfg, cfg)
 					switch r.Method {
@@ -96,7 +98,7 @@ func (server *Server) GenrateServer(data map[string]any) {
 						Put(w, r.WithContext(ctx))
 					}
 
-				})
+				}, arrMiddleware...)
 
 				SetConfigurationServer(cfg)
 				server.mux.HandleFunc(path, funcRequest)
@@ -107,7 +109,7 @@ func (server *Server) GenrateServer(data map[string]any) {
 	server.mux.HandleFunc("/up", func(w http.ResponseWriter, r *http.Request) {
 		response.ResponseJson(w, map[string]any{
 			"code":    http.StatusAccepted,
-			"message": "up change",
+			"message": "up change jsjs",
 		}, http.StatusAccepted)
 	})
 
@@ -115,6 +117,10 @@ func (server *Server) GenrateServer(data map[string]any) {
 		http.ServeFile(w, r, "public/index.html")
 	})
 	server.mux.Handle("/", http.StripPrefix("/", http.FileServer(http.Dir("public/"))))
+	// server.mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+	// 	// http.ServeFile(w, r, "public/index.html")
+	// 	http.Redirect(w, r, "/docs", http.StatusSeeOther)
+	// })
 
 	server.mux.HandleFunc("/docs-api", func(w http.ResponseWriter, r *http.Request) {
 
@@ -131,6 +137,8 @@ func (server *Server) GenrateServer(data map[string]any) {
 }
 
 func SetConfigurationServer(cfg helpers.ConfigServerApi) {
+
+	cfg.PreLoader()
 
 	if cfg.Schema != nil {
 

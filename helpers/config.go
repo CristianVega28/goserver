@@ -1,7 +1,11 @@
 package helpers
 
 import (
+	"fmt"
+	"os"
+
 	"github.com/CristianVega28/goserver/core/db"
+	"github.com/CristianVega28/goserver/core/models"
 	"github.com/samber/lo"
 )
 
@@ -11,6 +15,7 @@ type (
 		MiddlewareApi MiddlewareApi  `json:"middleware"`
 		Response      any            `json:"response"`
 		Schema        map[string]any `json:"schema"`
+		Env           map[string]any `json:"env"`
 	}
 
 	MiddlewareApi struct {
@@ -106,4 +111,29 @@ func extractTableName(mapSchema map[string]any) []string {
 
 	tableNameVar = append(tableNameVar, tableNameInternal...)
 	return tableNameVar
+}
+
+func (cfg *ConfigServerApi) PreLoader() {
+
+	// Set enviroment variables
+
+	for i, v := range cfg.Env {
+
+		err := os.Setenv(i, fmt.Sprintf("%v", v))
+		if err != nil {
+			fmt.Println("Error setting enviroment variable:", err.Error())
+		}
+	}
+
+	for _, v := range cfg.MiddlewareApi.Security {
+		if v == "rate_limit" {
+			exist, _ := db.CheckAndTableInDatabase("rate_limits", db.Connect())
+
+			if !exist {
+				rate_limit := models.RateLimit{}
+				rate_limit.SeederTable()
+			}
+		}
+	}
+
 }

@@ -6,21 +6,22 @@ import (
 	"syscall"
 
 	"github.com/CristianVega28/goserver/core"
-	"github.com/CristianVega28/goserver/core/middleware"
 	"github.com/CristianVega28/goserver/server"
+	"github.com/CristianVega28/goserver/utils"
 )
 
 //nolint:unused
 func main() {
 
+	lbk := utils.Logger{}
+	log := lbk.Create()
 	prevServer := server.Server{}
 	srv := prevServer.NewServer()
 
 	exec := core.Execution{
-		Args:          os.Args,
-		File:          core.File{},
-		Server:        &srv,
-		MapMiddleware: middleware.CreateMapMiddleware(),
+		Args:   os.Args,
+		File:   core.File{},
+		Server: &srv,
 	}
 
 	exec.ParserArg()
@@ -37,6 +38,7 @@ func main() {
 	}()
 	// Canal para capturar señal de interrupción
 
+	log.Msg("Server running on ->  http://localhost" + exec.GetPort())
 	select {
 	case <-sign:
 		os.Exit(0)

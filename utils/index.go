@@ -16,6 +16,7 @@ func IsNil(i interface{}) bool {
 	}
 	return false
 }
+
 func CheckTypesForResponse(value any) ([]map[string]any, error) {
 	var response = make([]map[string]any, 0)
 	if arr, ok := value.([]any); ok {

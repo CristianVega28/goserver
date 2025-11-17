@@ -49,3 +49,7 @@ func (exec *Execution) ParserArg() {
 		}
 	})
 }
+
+func (exec *Execution) GetPort() string {
+	return exec.port
+}

@@ -4,3 +4,6 @@
 *.exe
 docs/
 /tmp
+main
+watcher
+.vscode/
