@@ -2,7 +2,7 @@
 *.db
 *.sqlite
 *.exe
-docs/
+/docs/*
 /tmp
 main
 watcher

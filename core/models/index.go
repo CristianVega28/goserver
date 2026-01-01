@@ -28,8 +28,9 @@ type (
 	}
 
 	ModelsI[T any] interface {
-		Select(id string) T
-		Insert(m any) error
+		Select(id string, columns []string) ([]map[string]any, error)
+		Insert(m []map[string]any, meta []db.MetadataTable) error
+		Update(m []map[string]any, meta []db.MetadataTable) error
 		InsertMigration(isInsert bool) error
 		SelectAll() []T
 		Init() Models[T]
@@ -42,6 +43,8 @@ type (
 		AddModels(m Models[T])
 		GetResponse() []map[string]any
 		SetResponse(res any)
+		ParserColumn(arr db.Migration) []string
+		GenerateMetadata(model any) []db.MetadataTable
 	}
 	DB struct {
 		Conn *sql.DB
@@ -73,16 +76,99 @@ func (model *Models[T]) InsertMigration(isInsert bool) error {
 
 	return nil
 }
-func (model *Models[T]) Insert(m any) error {
-	// if mapsInsert, ok := m.([]map[string]any); ok {
-	// 	rawSql = db.InsertIntoTableRawSql(model.TableName, mapsInsert, model.Fields)
-	// }
+func (model *Models[T]) Insert(data []map[string]any, meta []db.MetadataTable) error {
+	var rawSql string
+	conn := db.Connect()
+	verifed, _ := db.CheckAndTableInDatabase(model.TableName, conn)
+
+	if !verifed {
+		var errorT = fmt.Errorf("the table %s does not exist in the database", model.TableName)
+		return errorT
+	}
+
+	rawSql = db.InsertIntoTableRawSql(model.TableName, data, meta, true)
+	log.Msg(rawSql)
+
+	if rawSql != "" {
+		_, err := conn.Exec(rawSql)
+		if err != nil {
+			log.Fatal(err.Error())
+			return err
+		}
+
+	}
+
 	return nil
 }
 
-func (model *Models[T]) Select(id string) T {
-	var a T
-	return a
+func (model *Models[T]) Update(data []map[string]any, meta []db.MetadataTable) error {
+	conn := db.Connect()
+	verifed, _ := db.CheckAndTableInDatabase(model.TableName, conn)
+
+	if !verifed {
+		var errorT = fmt.Errorf("the table %s does not exist in the database", model.TableName)
+		return errorT
+	}
+
+	return nil
+}
+
+func (model *Models[T]) Select(id string, columns []string) ([]map[string]any, error) {
+
+	conn := db.Connect()
+	verifed, _ := db.CheckAndTableInDatabase(model.TableName, conn)
+
+	if !verifed {
+		var errorT = fmt.Errorf("the table %s does not exist in the database", model.TableName)
+		return nil, errorT
+	}
+
+	sqlRow := fmt.Sprintf("SELECT %s FROM %s WHERE %s = ?;", "*", model.TableName, model.PrimaryKey)
+	log.Msg(sqlRow)
+	log.Msg(id)
+	rows, errQuery := conn.Query(sqlRow, id)
+	if errQuery != nil {
+		return nil, errQuery
+	}
+
+	if errQuery == sql.ErrNoRows {
+		return nil, nil
+	}
+
+	defer rows.Close()
+
+	results := []map[string]any{}
+
+	for rows.Next() {
+		values := make([]interface{}, len(columns))
+		valuePtrs := make([]interface{}, len(columns))
+		for i := range columns {
+			valuePtrs[i] = &values[i]
+		}
+
+		err := rows.Scan(valuePtrs...)
+		if err != nil {
+			return nil, err
+		}
+
+		rowMap := make(map[string]any)
+
+		for i, col := range columns {
+			v := values[i]
+
+			// MySQL devuelve []byte para strings
+			if b, ok := v.([]byte); ok {
+				rowMap[col] = string(b)
+			} else {
+				rowMap[col] = v
+			}
+		}
+
+		results = append(results, rowMap)
+
+	}
+
+	return results, nil
 }
 
 func (model *Models[T]) SelectAll() []map[string]any {
@@ -183,4 +269,26 @@ func (model *Models[T]) GetResponse() []map[string]any {
 func (model *Models[T]) SetResponse(res any) {
 	response, _ := utils.CheckTypesForResponse(res)
 	model.Response = response
+}
+func (model *Models[T]) GenerateMetadata(modelAny any) []db.MetadataTable {
+	var metadata []db.MetadataTable
+	mapMeta := utils.ReturnMetadataTable(modelAny, "db")
+
+	for _, v := range mapMeta {
+		meta := db.MetadataTable{
+			Field: v["Field"],
+			Type:  v["Type"],
+		}
+		metadata = append(metadata, meta)
+
+	}
+	return metadata
+}
+
+func (model *Models[T]) ParserColumn(arr db.Migration) []string {
+	var columns []string
+	for field, _ := range arr.Fields {
+		columns = append(columns, field)
+	}
+	return columns
 }

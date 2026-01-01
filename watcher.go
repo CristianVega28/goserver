@@ -47,7 +47,7 @@ type (
 )
 
 var (
-	enviroment string        = "development" // Default environment
+	enviroment string        = os.Getenv("GOSERVER_ENV") // Default environment
 	pathTmp    string        = "tmp"
 	l          utils.LoggerI = &utils.Logger{}
 	logs       utils.Logger  = l.Create()

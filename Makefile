@@ -8,7 +8,7 @@ ARCH ?= $(shell go env GOARCH)
 FILES = $(APP-NAME) $(WATCH-FILE)
 
 run:
-	go run watcher.go
+	export GOSERVER_ENV=development && go run watcher.go
 build: 
 	@echo "Building $(APP_NAME) for $(OS)/$(ARCH)..."
 
