@@ -217,6 +217,35 @@ func InsertIntoTableRawSql(tableName string, data []map[string]any, metadataTabl
 	}
 }
 
+func UpdateIntoTableRawSql(tableName string, data map[string]any, primaryKey string) string {
+	var updateSql strings.Builder
+
+	updateSql.WriteString(fmt.Sprintf("UPDATE %s SET ", tableName))
+
+	length := len(data)
+	index := 0
+
+	for prop, value := range data {
+
+		if valueBk, ok := value.(string); ok {
+			updateSql.WriteString(fmt.Sprintf("%s = '%v'", prop, valueBk))
+		} else {
+			updateSql.WriteString(fmt.Sprintf("%s = %v", prop, valueBk))
+
+		}
+
+		if length-1 != index {
+			updateSql.WriteString(", ")
+		}
+
+		index++
+	}
+
+	updateSql.WriteString(fmt.Sprintf(" WHERE %s = '%v';", primaryKey, data[primaryKey]))
+
+	return updateSql.String()
+}
+
 func Connect() *sql.DB {
 	db, err := sql.Open("sqlite3", "file:database.db?cache=shared&mode=rwc")
 

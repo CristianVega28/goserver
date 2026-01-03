@@ -30,7 +30,7 @@ type (
 	ModelsI[T any] interface {
 		Select(id string, columns []string) ([]map[string]any, error)
 		Insert(m []map[string]any, meta []db.MetadataTable) error
-		Update(m []map[string]any, meta []db.MetadataTable) error
+		Update(m map[string]any, primaryKey string) error
 		InsertMigration(isInsert bool) error
 		SelectAll() []T
 		Init() Models[T]
@@ -87,7 +87,6 @@ func (model *Models[T]) Insert(data []map[string]any, meta []db.MetadataTable) e
 	}
 
 	rawSql = db.InsertIntoTableRawSql(model.TableName, data, meta, true)
-	log.Msg(rawSql)
 
 	if rawSql != "" {
 		_, err := conn.Exec(rawSql)
@@ -101,13 +100,24 @@ func (model *Models[T]) Insert(data []map[string]any, meta []db.MetadataTable) e
 	return nil
 }
 
-func (model *Models[T]) Update(data []map[string]any, meta []db.MetadataTable) error {
+func (model *Models[T]) Update(data map[string]any, primaryKey string) error {
+	var rawSql string
 	conn := db.Connect()
 	verifed, _ := db.CheckAndTableInDatabase(model.TableName, conn)
 
 	if !verifed {
 		var errorT = fmt.Errorf("the table %s does not exist in the database", model.TableName)
 		return errorT
+	}
+	rawSql = db.UpdateIntoTableRawSql(model.TableName, data, primaryKey)
+
+	if rawSql != "" {
+		_, err := conn.Exec(rawSql)
+		if err != nil {
+			log.Fatal(err.Error())
+			return err
+		}
+
 	}
 
 	return nil

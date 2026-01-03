@@ -43,6 +43,8 @@ func (r *RateLimit) InsertData() error {
 
 func (r *RateLimit) UpdateData(ip string) error {
 	// colums := r.Models.ParserColumn(r.GetMigration())
+	// parserMaps := utils.StructToMap(r, "db")
+	// fmt.Println(parserMaps)
 	return nil
 }
 
