@@ -14,15 +14,17 @@ import (
 
 type (
 	Server struct {
-		mux *http.ServeMux
-		Srv http.Server
+		mux   *http.ServeMux
+		Srv   http.Server
+		Debug bool
 	}
 )
 
 func (server *Server) NewServer() Server {
 	return Server{
-		mux: http.NewServeMux(),
-		Srv: http.Server{},
+		mux:   http.NewServeMux(),
+		Srv:   http.Server{},
+		Debug: server.Debug,
 	}
 }
 
@@ -133,7 +135,9 @@ func (server *Server) GenrateServer(data map[string]any) {
 	handler := c.Handler(server.mux)
 	server.Srv.Handler = handler
 
-	server.Srv.ListenAndServe()
+	if !server.Debug {
+		server.Srv.ListenAndServe()
+	}
 }
 
 func SetConfigurationServer(cfg helpers.ConfigServerApi) {
