@@ -228,9 +228,9 @@ func UpdateIntoTableRawSql(tableName string, data map[string]any, primaryKey str
 	for prop, value := range data {
 
 		if valueBk, ok := value.(string); ok {
-			updateSql.WriteString(fmt.Sprintf("%s = '%v'", prop, valueBk))
+			updateSql.WriteString(fmt.Sprintf("%s = '%s'", prop, valueBk))
 		} else {
-			updateSql.WriteString(fmt.Sprintf("%s = %v", prop, valueBk))
+			updateSql.WriteString(fmt.Sprintf("%s = %v", prop, value))
 
 		}
 

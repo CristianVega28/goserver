@@ -6,6 +6,7 @@ import (
 
 	"github.com/CristianVega28/goserver/core/db"
 	"github.com/CristianVega28/goserver/core/models"
+	"github.com/CristianVega28/goserver/utils"
 	"github.com/samber/lo"
 )
 
@@ -121,7 +122,7 @@ func (cfg *ConfigServerApi) PreLoader() {
 
 		err := os.Setenv(i, fmt.Sprintf("%v", v))
 		if err != nil {
-			fmt.Println("Error setting enviroment variable:", err.Error())
+			utils.Log.Fatal(err.Error())
 		}
 	}
 

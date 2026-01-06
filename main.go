@@ -13,9 +13,10 @@ import (
 //nolint:unused
 func main() {
 
-	lbk := utils.Logger{}
-	log := lbk.Create()
-	prevServer := server.Server{}
+	utils.InitLogger()
+	prevServer := server.Server{
+		Debug: false,
+	}
 	srv := prevServer.NewServer()
 
 	exec := core.Execution{
@@ -38,7 +39,7 @@ func main() {
 	}()
 	// Canal para capturar señal de interrupción
 
-	log.Msg("Server running on ->  http://localhost" + exec.GetPort())
+	utils.Log.Msg("Server running on ->  http://localhost" + exec.GetPort())
 	select {
 	case <-sign:
 		os.Exit(0)

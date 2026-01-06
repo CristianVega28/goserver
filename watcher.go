@@ -110,7 +110,7 @@ func (w *Watcher) reloadByOs() {
 }
 
 func main() {
-
+	utils.InitLogger()
 	_, err := os.Stat(pathTmp)
 
 	if os.IsNotExist(err) {
@@ -231,7 +231,7 @@ func execution(enviroment string, watcher WatcherI) (children *exec.Cmd) {
 		build := exec.Command("go", arrayMainFile...)
 		err := build.Run()
 		if err != nil {
-			fmt.Println(err.Error())
+			utils.Log.Fatal(err.Error())
 		}
 		cmd = exec.Command(filepath.Join(pathTmp, "main.exe"), args...)
 	} else if enviroment == "production" {
@@ -252,7 +252,7 @@ func execution(enviroment string, watcher WatcherI) (children *exec.Cmd) {
 	}
 
 	if errRunner != nil {
-		fmt.Println("Error ejecutando core/main.go:", errRunner)
+		utils.Log.Fatal(errRunner.Error())
 	}
 
 	watcher.setCmd(cmd)

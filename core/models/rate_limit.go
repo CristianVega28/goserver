@@ -2,7 +2,6 @@ package models
 
 import (
 	"strconv"
-	"time"
 
 	"github.com/CristianVega28/goserver/core/db"
 	"github.com/CristianVega28/goserver/utils"
@@ -14,10 +13,10 @@ var env utils.Env = utils.Env{}
 Algorithm: Sliding Window Counter
 */
 type RateLimit struct {
-	CurrentCount   int       `db:"current_count"`
-	LastCount      int       `db:"last_count"`
-	TimestampStart time.Time `db:"timestamp_start"`
-	Ip             string    `db:"ip"`
+	CurrentCount   int    `db:"current_count"`
+	LastCount      int    `db:"last_count"`
+	TimestampStart int64  `db:"timestamp_start"`
+	Ip             string `db:"ip"`
 	Models[map[string]any]
 }
 
@@ -34,7 +33,6 @@ func (r *RateLimit) InsertData() error {
 
 	meta := r.GenerateMetadata(r)
 
-	log.Structs("RateLimit InsertData Meta", meta)
 	r.SetTableName("rate_limits")
 	r.Insert([]map[string]any{parserMaps}, meta)
 
@@ -43,8 +41,9 @@ func (r *RateLimit) InsertData() error {
 
 func (r *RateLimit) UpdateData(ip string) error {
 	// colums := r.Models.ParserColumn(r.GetMigration())
-	// parserMaps := utils.StructToMap(r, "db")
-	// fmt.Println(parserMaps)
+	parserMaps := utils.StructToMap(r, "db")
+	r.SetTableName("rate_limits")
+	r.Update(parserMaps, "ip")
 	return nil
 }
 
@@ -53,9 +52,9 @@ func (r *RateLimit) GetEnvTime() int {
 
 	if v {
 		time, _ := strconv.Atoi(_v)
-		return time
+		return time * 1000
 	} else {
-		return 60 // default seconds
+		return 60 * 1000 // default seconds
 	}
 
 }

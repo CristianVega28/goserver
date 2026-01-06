@@ -18,6 +18,7 @@ build:
 clear:
 	rm  -rf ./tmp
 	rm -rf ./*.exe
+	rm *.db
 	
 	
 	

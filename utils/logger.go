@@ -49,3 +49,10 @@ func (l *Logger) Structs(message string, structs any) {
 func (l *Logger) Slice(message string, array any) {
 	l.log.Info().Interface(message, array)
 }
+
+var Log Logger
+
+func InitLogger() {
+	Log = (&Logger{}).Create()
+
+}

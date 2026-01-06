@@ -1,13 +1,12 @@
 package utils
 
-import "os"
+import (
+	"os"
+)
 
 type (
 	Env struct{}
 )
-
-var lgbk LoggerI = &Logger{}
-var log Logger = lgbk.Create()
 
 func (e *Env) GetEnv(key string) (bool, string) {
 	value, exists := os.LookupEnv(key)
@@ -19,15 +18,15 @@ func (e *Env) SetEnv(key string, value string) error {
 }
 
 func (e *Env) Log() {
-	log.Msg("Environment Variables:")
+	Log.Msg("Environment Variables:")
 
 	v, _ := e.GetEnv("rate_limit_requests")
-	log.Slice("rate_limit_request", v)
+	Log.Slice("rate_limit_request", v)
 
 	v, _ = e.GetEnv("rate_limit_time")
-	log.Slice("rate_limit_time", v)
+	Log.Slice("rate_limit_time", v)
 
 	v, _ = e.GetEnv("rate_limit_scope")
-	log.Slice("rate_limit_scope", v)
+	Log.Slice("rate_limit_scope", v)
 
 }

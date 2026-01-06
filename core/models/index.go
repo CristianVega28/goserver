@@ -51,9 +51,6 @@ type (
 	}
 )
 
-var looger = utils.Logger{}
-var log = looger.Create()
-
 func (base *Models[T]) Init() Models[T] {
 	return Models[T]{
 		conn:        db.Connect(),
@@ -68,7 +65,7 @@ func (model *Models[T]) InsertMigration(isInsert bool) error {
 	if rawSql != "" {
 		_, err := model.conn.Exec(rawSql)
 		if err != nil {
-			log.Fatal(err.Error())
+			utils.Log.Fatal(err.Error())
 			return err
 		}
 
@@ -91,7 +88,7 @@ func (model *Models[T]) Insert(data []map[string]any, meta []db.MetadataTable) e
 	if rawSql != "" {
 		_, err := conn.Exec(rawSql)
 		if err != nil {
-			log.Fatal(err.Error())
+			utils.Log.Fatal(err.Error())
 			return err
 		}
 
@@ -114,7 +111,7 @@ func (model *Models[T]) Update(data map[string]any, primaryKey string) error {
 	if rawSql != "" {
 		_, err := conn.Exec(rawSql)
 		if err != nil {
-			log.Fatal(err.Error())
+			utils.Log.Fatal(err.Error())
 			return err
 		}
 
@@ -134,8 +131,6 @@ func (model *Models[T]) Select(id string, columns []string) ([]map[string]any, e
 	}
 
 	sqlRow := fmt.Sprintf("SELECT %s FROM %s WHERE %s = ?;", "*", model.TableName, model.PrimaryKey)
-	log.Msg(sqlRow)
-	log.Msg(id)
 	rows, errQuery := conn.Query(sqlRow, id)
 	if errQuery != nil {
 		return nil, errQuery
@@ -148,11 +143,15 @@ func (model *Models[T]) Select(id string, columns []string) ([]map[string]any, e
 	defer rows.Close()
 
 	results := []map[string]any{}
+	_column, errColumn := rows.Columns()
+	if errColumn != nil {
+		return nil, errColumn
+	}
 
 	for rows.Next() {
-		values := make([]interface{}, len(columns))
-		valuePtrs := make([]interface{}, len(columns))
-		for i := range columns {
+		values := make([]interface{}, len(_column))
+		valuePtrs := make([]interface{}, len(_column))
+		for i := range _column {
 			valuePtrs[i] = &values[i]
 		}
 
@@ -163,9 +162,8 @@ func (model *Models[T]) Select(id string, columns []string) ([]map[string]any, e
 
 		rowMap := make(map[string]any)
 
-		for i, col := range columns {
+		for i, col := range _column {
 			v := values[i]
-
 			// MySQL devuelve []byte para strings
 			if b, ok := v.([]byte); ok {
 				rowMap[col] = string(b)
@@ -187,7 +185,7 @@ func (model *Models[T]) SelectAll() []map[string]any {
 	rows, err := model.conn.Query("SELECT * FROM " + model.TableName)
 
 	if err != nil {
-		log.Fatal(err.Error())
+		utils.Log.Fatal(err.Error())
 	}
 
 	defer rows.Close()
@@ -195,7 +193,7 @@ func (model *Models[T]) SelectAll() []map[string]any {
 	cols, err := rows.Columns()
 
 	if err != nil {
-		log.Fatal(err.Error())
+		utils.Log.Fatal(err.Error())
 	}
 
 	for rows.Next() {
@@ -207,7 +205,7 @@ func (model *Models[T]) SelectAll() []map[string]any {
 
 		// 2. Escanear la fila
 		if err := rows.Scan(valuePtrs...); err != nil {
-			log.Fatal(err.Error())
+			utils.Log.Fatal(err.Error())
 		}
 
 		// 3. Crear map columna → valor
@@ -277,7 +275,10 @@ func (model *Models[T]) GetResponse() []map[string]any {
 }
 
 func (model *Models[T]) SetResponse(res any) {
-	response, _ := utils.CheckTypesForResponse(res)
+	response, err := utils.CheckTypesForResponse(res)
+	if err != nil {
+		utils.Log.Fatal(err.Error())
+	}
 	model.Response = response
 }
 func (model *Models[T]) GenerateMetadata(modelAny any) []db.MetadataTable {
