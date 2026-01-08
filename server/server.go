@@ -125,10 +125,16 @@ func (server *Server) GenrateServer(data map[string]any) {
 	// })
 
 	server.mux.HandleFunc("/docs-api", func(w http.ResponseWriter, r *http.Request) {
-
 		response.ResponseJson(w, map[string]any{
 			"success": true,
 			"data":    arrCfgResponse,
+		}, http.StatusOK)
+	})
+
+	server.mux.HandleFunc("/stadistic", func(w http.ResponseWriter, r *http.Request) {
+		response.ResponseJson(w, map[string]any{
+			"success": true,
+			"data":    nil,
 		}, http.StatusOK)
 	})
 

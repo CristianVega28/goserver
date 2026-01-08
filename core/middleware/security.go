@@ -3,7 +3,6 @@ package middleware
 import (
 	"net"
 	"net/http"
-	"strconv"
 	"time"
 
 	"github.com/CristianVega28/goserver/core/models"
@@ -50,20 +49,39 @@ func (security *SecurityMiddleware) RateLimit() MiddlewareFunction {
 				rateLimit.InsertData()
 
 			} else {
-				currentCount := model[0]["current_count"].(int64)
 
-				rateLimit.CurrentCount = int(currentCount) + 1
-				rateLimit.LastCount = int(model[0]["last_count"].(int64))
-
-				timestamp, _ := strconv.ParseInt(model[0]["timestamp_start"].(string), 10, 64)
-				rateLimit.TimestampStart = timestamp
+				currentCount := model[0]["current_count"].(int)
+				timestart_start := model[0]["timestamp_start"].(int64)
+				previousCount := model[0]["current_count"].(int)
+				rateLimit.CurrentCount = currentCount
+				rateLimit.LastCount = previousCount
+				rateLimit.TimestampStart = timestart_start
 				rateLimit.Ip = host
-				rateLimit.UpdateData(host)
+
+				nowMs := time.Now().UnixMilli()
+				currentSecond := nowMs / 1000
+
+				if currentSecond != timestart_start/1000 {
+					elapsedMs := nowMs % 1000
+					weight := (1000 - elapsedMs) / 1000
+
+					total := int64(currentCount) + int64(previousCount)*weight
+
+					if total > int64(rateLimit.GetEnvLimit()) {
+						w.WriteHeader(http.StatusTooManyRequests)
+						w.Write([]byte("Rate limit exceeded"))
+						return
+					}
+					rateLimit.CurrentCount = currentCount + 1
+					rateLimit.LastCount = previousCount
+					rateLimit.TimestampStart = timestart_start
+					rateLimit.Ip = host
+
+					f(w, r)
+				}
 
 			}
 
-			// overlap :=
-			f(w, r)
 		}
 
 	}

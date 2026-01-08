@@ -33,6 +33,11 @@ type (
 		MiddlewareApi MiddlewareApi  `json:"middleware"`
 		Schema        map[string]any `json:"schema"`
 	}
+	ConfigServerStatistics struct {
+		TotalRequests int
+		TotalTables   int
+		TotalRecords  int
+	}
 )
 
 var KeyCfg = ConfigKeyContext{}
