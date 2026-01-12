@@ -42,6 +42,17 @@ type (
 
 var KeyCfg = ConfigKeyContext{}
 
+func (cfgS *ConfigServerStatistics) Loader(data map[string]any) {
+	if len(data) != 0 {
+		cfgS.TotalRequests = len(data)
+	}
+
+	cnn := db.Connect()
+
+	defer cnn.Close()
+
+}
+
 func (cfg *ConfigServerApi) ReturnMetadataTable() []db.MetadataTable {
 	metadata := []db.MetadataTable{}
 	for key, value := range cfg.Schema {

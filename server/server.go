@@ -39,6 +39,12 @@ func (server *Server) GenrateServer(data map[string]any) {
 	})
 	var arrCfgResponse []helpers.ResponseConfig
 
+	var statistics helpers.ConfigServerStatistics = helpers.ConfigServerStatistics{}
+
+	(&statistics).Loader(data)
+
+	statistics.TotalRecords = 0
+
 	if len(data) != 0 {
 		for key, value := range data {
 
@@ -50,6 +56,10 @@ func (server *Server) GenrateServer(data map[string]any) {
 				rspCfg := helpers.ResponseConfig{
 					Path:    path,
 					Request: []string{"GET", "POST", "DELETE", "PUT"},
+				}
+
+				if _v, ok := value.([]any); ok {
+					statistics.TotalRecords += len(_v)
 				}
 				arrCfgResponse = append(arrCfgResponse, rspCfg)
 				server.mux.HandleFunc(path, middleware.Chain(func(w http.ResponseWriter, r *http.Request) {
@@ -86,6 +96,10 @@ func (server *Server) GenrateServer(data map[string]any) {
 				var funcRequest http.HandlerFunc
 
 				arrMiddleware := middleware.ReturnArraysMiddleware(cfg)
+
+				if _value, ok := cfg.Response.([]any); ok {
+					statistics.TotalRecords += len(_value)
+				}
 
 				funcRequest = middleware.Chain(func(w http.ResponseWriter, r *http.Request) {
 					ctx := context.WithValue(r.Context(), helpers.KeyCfg, cfg)
@@ -131,10 +145,14 @@ func (server *Server) GenrateServer(data map[string]any) {
 		}, http.StatusOK)
 	})
 
-	server.mux.HandleFunc("/stadistic", func(w http.ResponseWriter, r *http.Request) {
+	server.mux.HandleFunc("/statistics", func(w http.ResponseWriter, r *http.Request) {
 		response.ResponseJson(w, map[string]any{
 			"success": true,
-			"data":    nil,
+			"data": map[string]any{
+				"total_requests": statistics.TotalRequests,
+				"total_tables":   statistics.TotalTables,
+				"total_records":  statistics.TotalRecords,
+			},
 		}, http.StatusOK)
 	})
 
