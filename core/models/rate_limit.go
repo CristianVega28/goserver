@@ -7,14 +7,12 @@ import (
 	"github.com/CristianVega28/goserver/utils"
 )
 
-var env utils.Env = utils.Env{}
-
 /*
 Algorithm: Sliding Window Counter
 */
 type RateLimit struct {
-	CurrentCount   int    `db:"current_count"`
-	LastCount      int    `db:"last_count"`
+	CurrentCount   int64  `db:"current_count"`
+	LastCount      int64  `db:"last_count"`
 	TimestampStart int64  `db:"timestamp_start"`
 	Ip             string `db:"ip"`
 	Models[map[string]any]
@@ -52,9 +50,9 @@ func (r *RateLimit) GetEnvTime() int {
 
 	if v {
 		time, _ := strconv.Atoi(_v)
-		return time * 1000
+		return time
 	} else {
-		return 60 * 1000 // default seconds
+		return 60 // default seconds
 	}
 
 }

@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"reflect"
 
+	"github.com/CristianVega28/goserver/core/controllers"
 	"github.com/CristianVega28/goserver/core/middleware"
 	"github.com/CristianVega28/goserver/helpers"
 	"github.com/rs/cors"
@@ -97,6 +98,7 @@ func (server *Server) GenrateServer(data map[string]any) {
 
 				arrMiddleware := middleware.ReturnArraysMiddleware(cfg)
 
+				fmt.Println(cfg.MiddlewareApi.Auth)
 				if _value, ok := cfg.Response.([]any); ok {
 					statistics.TotalRecords += len(_value)
 				}
@@ -117,6 +119,12 @@ func (server *Server) GenrateServer(data map[string]any) {
 				}, arrMiddleware...)
 
 				SetConfigurationServer(cfg)
+
+				if cfg.MiddlewareApi.Auth == "bearer" {
+					pathTemp := fmt.Sprintf("/%s/token", path)
+					server.mux.HandleFunc(pathTemp, (&controllers.AuthController{}).BearerController())
+				}
+
 				server.mux.HandleFunc(path, funcRequest)
 
 			}

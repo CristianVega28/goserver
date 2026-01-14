@@ -1,10 +1,5 @@
 package models
 
-type (
-	User struct {
-		BaseModel
-		Name     string
-		Email    string
-		Password string
-	}
-)
+import "github.com/CristianVega28/goserver/utils"
+
+var env utils.Env = utils.Env{}
