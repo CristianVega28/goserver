@@ -10,6 +10,7 @@ import (
 	"github.com/CristianVega28/goserver/core/models"
 	"github.com/CristianVega28/goserver/helpers"
 	"github.com/CristianVega28/goserver/utils"
+	"github.com/google/uuid"
 )
 
 type (
@@ -24,17 +25,53 @@ func (auth *AuthController) BearerController() http.HandlerFunc {
 		if _, err := rand.Read(bytes); err != nil {
 			utils.Log.Fatal(err.Error())
 		}
+		id := uuid.New().String()
 
-		var auth models.Auth = models.Auth{}
+		http.SetCookie(w, &http.Cookie{
+			Name:     "sessionid",
+			Value:    id,
+			HttpOnly: true,
+		})
 
-		toekn := hex.EncodeToString(bytes)
-		expiration := time.Now().Unix() + int64(auth.GetBearerTokenExpiration())
+		token := hex.EncodeToString(bytes)
+		expiration := time.Now().Unix()
+
+		models.Cache_.Set(id, token, expiration)
 
 		helper.ResponseJson(w, map[string]string{
-			"api_key": toekn,
+			"api_key": token,
 			"expires": strconv.FormatInt(expiration, 10),
 		}, http.StatusOK)
 
 	}
 
+}
+
+func (auth *AuthController) GetToken() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+
+		sessionid, err := r.Cookie("sessionid")
+
+		if err != nil {
+			if err == http.ErrNoCookie {
+				helper.ResponseJson(w, map[string]string{
+					"error": "No session cookie found",
+				}, http.StatusUnauthorized)
+				return
+			}
+		}
+
+		value, exist := models.Cache_.Get(sessionid.Value)
+
+		if exist == false {
+			helper.ResponseJson(w, map[string]string{
+				"error": "Not found token",
+			}, http.StatusNotFound)
+
+		}
+
+		helper.ResponseJson(w, map[string]string{
+			"token": value.Value.(string),
+		}, http.StatusOK)
+	}
 }

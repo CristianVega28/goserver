@@ -120,9 +120,13 @@ func (server *Server) GenrateServer(data map[string]any) {
 
 				SetConfigurationServer(cfg)
 
+				fmt.Println("Auth Middleware:", cfg.MiddlewareApi.Auth)
 				if cfg.MiddlewareApi.Auth == "bearer" {
-					pathTemp := fmt.Sprintf("/%s/token", path)
-					server.mux.HandleFunc(pathTemp, (&controllers.AuthController{}).BearerController())
+					generatePath := fmt.Sprintf("%s/bearer/token/generate", path)
+					getTokenPath := fmt.Sprintf("%s/bearer/token", path)
+					controllersAuth := &controllers.AuthController{}
+					server.mux.HandleFunc(generatePath, controllersAuth.BearerController())
+					server.mux.HandleFunc(getTokenPath, controllersAuth.GetToken())
 				}
 
 				server.mux.HandleFunc(path, funcRequest)

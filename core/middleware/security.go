@@ -1,6 +1,7 @@
 package middleware
 
 import (
+	"fmt"
 	"net"
 	"net/http"
 	"strconv"
@@ -50,6 +51,7 @@ func (security *SecurityMiddleware) RateLimit() MiddlewareFunction {
 				rateLimit.InsertData()
 
 			} else {
+				fmt.Println(model)
 				currentCount := model[0]["current_count"].(string)
 				timestart_start := model[0]["timestamp_start"].(string)
 				previousCount := model[0]["current_count"].(string)
