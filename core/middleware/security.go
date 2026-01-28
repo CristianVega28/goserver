@@ -51,10 +51,9 @@ func (security *SecurityMiddleware) RateLimit() MiddlewareFunction {
 				rateLimit.InsertData()
 
 			} else {
-				fmt.Println(model)
-				currentCount := model[0]["current_count"].(string)
-				timestart_start := model[0]["timestamp_start"].(string)
-				previousCount := model[0]["current_count"].(string)
+				currentCount := fmt.Sprint(model[0]["current_count"])
+				timestart_start := fmt.Sprint(model[0]["timestamp_start"])
+				previousCount := fmt.Sprint(model[0]["current_count"])
 
 				intCurrentCount, _ := strconv.ParseInt(currentCount, 10, 64)
 				intPreviousCount, _ := strconv.ParseInt(previousCount, 10, 64)

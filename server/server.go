@@ -120,7 +120,6 @@ func (server *Server) GenrateServer(data map[string]any) {
 
 				SetConfigurationServer(cfg)
 
-				fmt.Println("Auth Middleware:", cfg.MiddlewareApi.Auth)
 				if cfg.MiddlewareApi.Auth == "bearer" {
 					generatePath := fmt.Sprintf("%s/bearer/token/generate", path)
 					getTokenPath := fmt.Sprintf("%s/bearer/token", path)
