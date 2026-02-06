@@ -1,16 +1,18 @@
 package models
 
-import it "github.com/CristianVega28/goserver/core/interface"
+import (
+	it "github.com/CristianVega28/goserver/core/interface"
+)
 
 type (
 	Cache struct {
 		store map[string]Store
+		it.CacheInterface
 	}
 
 	Store struct {
 		Value any
 		Ttl   int64
-		it.StoreInterface
 	}
 )
 

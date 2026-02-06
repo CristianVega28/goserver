@@ -1,8 +1,16 @@
 package helpers
 
 import (
+	"crypto/rand"
+	"encoding/hex"
 	"encoding/json"
 	"net/http"
+	"strconv"
+	"time"
+
+	"github.com/CristianVega28/goserver/core/models"
+	"github.com/CristianVega28/goserver/utils"
+	"github.com/google/uuid"
 )
 
 type (
@@ -38,4 +46,35 @@ func (response *Response) ResponseJson(r http.ResponseWriter, information any, c
 
 	r.Write(output)
 
+}
+
+func (reqsponse *Response) GenerateToken(r http.ResponseWriter) (string, string) {
+	bytes := make([]byte, 64)
+	if _, err := rand.Read(bytes); err != nil {
+		utils.Log.Fatal(err.Error())
+	}
+	id := uuid.New().String()
+
+	http.SetCookie(r, &http.Cookie{
+		Name:     "sessionid",
+		Value:    id,
+		HttpOnly: true,
+	})
+	token := hex.EncodeToString(bytes)
+	expiration := time.Now().Unix()
+
+	models.Cache_.Set(id, token, expiration)
+
+	return token, strconv.FormatInt(expiration, 10)
+
+}
+
+func (response *Response) DeleteSetCookie(r http.ResponseWriter, name string) {
+	http.SetCookie(r, &http.Cookie{
+		Name:     name,
+		Value:    "",
+		Path:     "/",
+		HttpOnly: true,
+		MaxAge:   -1,
+	})
 }

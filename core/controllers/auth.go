@@ -1,63 +1,54 @@
 package controllers
 
 import (
-	"crypto/rand"
-	"encoding/hex"
 	"net/http"
 	"strconv"
-	"time"
 
 	"github.com/CristianVega28/goserver/core/models"
 	"github.com/CristianVega28/goserver/helpers"
-	"github.com/CristianVega28/goserver/utils"
-	"github.com/google/uuid"
 )
 
 type (
 	AuthController struct{}
 )
 
+const (
+	nameCookie = "sessionid"
+)
+
 var helper helpers.Response = helpers.Response{}
 
 func (auth *AuthController) BearerController() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		bytes := make([]byte, 64)
-		if _, err := rand.Read(bytes); err != nil {
-			utils.Log.Fatal(err.Error())
-		}
-		cookie, err := r.Cookie("sessionid")
-
+		cookie, err := r.Cookie(nameCookie)
 		if err != nil {
 			if err == http.ErrNoCookie {
 
-				id := uuid.New().String()
-
-				http.SetCookie(w, &http.Cookie{
-					Name:     "sessionid",
-					Value:    id,
-					HttpOnly: true,
-				})
-				token := hex.EncodeToString(bytes)
-				expiration := time.Now().Unix()
-
-				models.Cache_.Set(id, token, expiration)
+				token, expiration := helper.GenerateToken(w)
 
 				helper.ResponseJson(w, map[string]string{
 					"api_key": token,
-					"expires": strconv.FormatInt(expiration, 10),
+					"expires": expiration,
 				}, http.StatusOK)
 
 			}
+			return
 		}
 
-		token, bool := models.Cache_.Get(cookie.Value)
+		token, exist := models.Cache_.Get(cookie.Value)
 
-		if bool == false {
+		if exist == false {
+
+			helper.DeleteSetCookie(w, nameCookie)
+			token, expiration := helper.GenerateToken(w)
+
 			helper.ResponseJson(w, map[string]string{
-				"error": "Not found token",
+				"error":       "Not found token",
+				"detail":      "The token associated with the session cookie was not found or has expired",
+				"new_api_key": token,
+				"expires":     expiration,
 			}, http.StatusNotFound)
 			return
-
 		}
 
 		helper.ResponseJson(w, map[string]string{
