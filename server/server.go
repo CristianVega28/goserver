@@ -98,7 +98,6 @@ func (server *Server) GenrateServer(data map[string]any) {
 
 				arrMiddleware := middleware.ReturnArraysMiddleware(cfg)
 
-				fmt.Println(cfg.MiddlewareApi.Auth)
 				if _value, ok := cfg.Response.([]any); ok {
 					statistics.TotalRecords += len(_value)
 				}

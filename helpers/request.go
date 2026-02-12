@@ -59,6 +59,7 @@ func (reqsponse *Response) GenerateToken(r http.ResponseWriter) (string, string)
 		Name:     "sessionid",
 		Value:    id,
 		HttpOnly: true,
+		Path:     "/",
 	})
 	token := hex.EncodeToString(bytes)
 	expiration := time.Now().Unix()

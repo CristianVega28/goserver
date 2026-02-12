@@ -31,3 +31,11 @@ func CheckTypesForResponse(value any) ([]map[string]any, error) {
 
 	return response, nil
 }
+
+func GetAt[T any](arr []T, index int) (T, bool) {
+	var zero T
+	if index < 0 || index >= len(arr) {
+		return zero, false
+	}
+	return arr[index], true
+}
