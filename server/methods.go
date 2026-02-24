@@ -5,9 +5,11 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"strconv"
 
 	"github.com/CristianVega28/goserver/core/models"
 	"github.com/CristianVega28/goserver/helpers"
+	server_helpers "github.com/CristianVega28/goserver/server/helpers"
 	"github.com/samber/lo"
 )
 
@@ -39,11 +41,33 @@ func Get(w http.ResponseWriter, r *http.Request, values any) error {
 		return nil
 	}
 	if cfg.ExistSchema() {
+		// Init Model
 		modelBk := models.Models[map[string]any]{}
 		model := modelBk.Init()
 		model.SetTableName(cfg.Schema["table_name"].(string))
-		response := model.SelectAll()
-		helper.ResponseJson(w, response, http.StatusAccepted)
+		// End Init Model
+
+		queries := r.URL.Query()
+		if len(queries) > 0 {
+			response := model.SelectAll()
+			helper.ResponseJson(w, response, http.StatusAccepted)
+		} else {
+			if queries.Get("page") != "" {
+
+				page := queries.Get("page")
+				pageInt, _ := strconv.Atoi(page)
+				pagination, err := server_helpers.FilterPagination(pageInt, model)
+				if err != nil {
+					helper.ResponseJson(w, map[string]any{
+						"success": false,
+						"error":   err.Error(),
+					}, http.StatusBadRequest)
+					return nil
+
+				}
+				helper.ResponseJson(w, pagination, http.StatusAccepted)
+			}
+		}
 
 		return nil
 	}

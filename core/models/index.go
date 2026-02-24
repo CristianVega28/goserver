@@ -3,6 +3,7 @@ package models
 import (
 	"database/sql"
 	"fmt"
+	"strings"
 	"time"
 
 	_ "github.com/mattn/go-sqlite3"
@@ -20,6 +21,7 @@ type (
 
 	Models[T any] struct {
 		conn        *sql.DB
+		Query       strings.Builder
 		TableName   string
 		Fields      []db.MetadataTable
 		PrimaryKey  string
@@ -28,7 +30,7 @@ type (
 	}
 
 	ModelsI[T any] interface {
-		Select(id string, columns []string) ([]map[string]any, error)
+		SelectModel(id string, columns []string) ([]map[string]any, error)
 		Insert(m []map[string]any, meta []db.MetadataTable) error
 		Update(m map[string]any, primaryKey string) error
 		InsertMigration(isInsert bool) error
@@ -45,6 +47,8 @@ type (
 		SetResponse(res any)
 		ParserColumn(arr db.Migration) []string
 		GenerateMetadata(model any) []db.MetadataTable
+		Count(tabla string) (int, error)
+		Pagination(page int, limit int) (int, error)
 	}
 	DB struct {
 		Conn *sql.DB
@@ -120,7 +124,7 @@ func (model *Models[T]) Update(data map[string]any, primaryKey string) error {
 	return nil
 }
 
-func (model *Models[T]) Select(id string, columns []string) ([]map[string]any, error) {
+func (model *Models[T]) SelectModel(id string, columns []string) ([]map[string]any, error) {
 
 	conn := db.Connect()
 	verifed, _ := db.CheckAndTableInDatabase(model.TableName, conn)
@@ -246,6 +250,16 @@ func (model *Models[T]) ValidateFields(bodyR any) map[string]any {
 	}
 
 	return nil
+}
+func (model *Models[T]) Count(tabla string) (int, error) {
+	var count int
+	err := model.conn.QueryRow(fmt.Sprintf("SELECT COUNT(*) FROM %s;", tabla)).Scan(&count)
+
+	if err != nil {
+		return 0, err
+	}
+
+	return count, nil
 }
 
 func (model *Models[T]) SetMetadataTable(fields []db.MetadataTable) {
