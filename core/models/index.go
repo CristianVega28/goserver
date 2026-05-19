@@ -317,3 +317,7 @@ func (model *Models[T]) ParserColumn(arr db.Migration) []string {
 	}
 	return columns
 }
+
+func (model *Models[T]) Pagination(page int, limit int) (int, error) {
+	return 1, nil
+}

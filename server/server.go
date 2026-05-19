@@ -34,9 +34,6 @@ func (server *Server) GenrateServer(data map[string]any) {
 	response := helpers.Response{}
 	c := cors.New(cors.Options{
 		AllowedOrigins: []string{"*"}, // o ej: []string{"http://localhost:4321"}
-		// AllowedMethods: []string{"*"},
-		// AllowedHeaders:   []string{"Content-Type", "Authorization"},
-		// AllowCredentials: true,
 	})
 	var arrCfgResponse []helpers.ResponseConfig
 

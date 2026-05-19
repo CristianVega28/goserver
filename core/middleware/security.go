@@ -40,7 +40,7 @@ func (security *SecurityMiddleware) RateLimit() MiddlewareFunction {
 
 			columns := rateLimit.ParserColumn(rateLimit.GetMigration())
 			host, _, _ := net.SplitHostPort(r.RemoteAddr)
-			model, _ := rateLimit.Select(host, columns)
+			model, _ := rateLimit.SelectModel(host, columns)
 
 			if len(model) == 0 {
 				rateLimit.CurrentCount = 1
