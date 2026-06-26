@@ -15,6 +15,8 @@ const (
 	QUERY_SEARCH_WHERE        = "_where"
 	QUERY_SEARCH_OR           = "_or"
 	QUERY_SEARCH_AND          = "_and"
+	QUERY_SEARCH_LTN          = "_ltn"
+	QUERY_SEARCH_GTN          = "_gtn"
 )
 
 type (
@@ -42,6 +44,8 @@ func (rq *RequestQueries) GetResponse() any {
 		QUERY_SEARCH_OR,
 		QUERY_SEARCH_WHERE,
 		QUERY_SORT,
+		QUERY_SEARCH_GTN,
+		QUERY_SEARCH_LTN
 	}
 
 	return nil

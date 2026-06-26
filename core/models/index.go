@@ -49,6 +49,7 @@ type (
 		GenerateMetadata(model any) []db.MetadataTable
 		Count(tabla string) (int, error)
 		Pagination(page int, limit int) (int, error)
+		Builder([]string) *Builder
 	}
 	DB struct {
 		Conn *sql.DB
@@ -320,4 +321,17 @@ func (model *Models[T]) ParserColumn(arr db.Migration) []string {
 
 func (model *Models[T]) Pagination(page int, limit int) (int, error) {
 	return 1, nil
+}
+
+func (model *Models[T]) Builder(columns []string) *Builder {
+	str := fmt.Sprintf("SELECT * FROM %s", model.TableName)
+	bld := strings.Builder{}
+	bld.WriteString(str)
+
+	return &(Builder{
+		conn:    model.conn,
+		table:   model.TableName,
+		str:     bld,
+		columns: columns,
+	})
 }
