@@ -30,3 +30,7 @@ func (builder *Builder) Or(column string, operator string, value string) *Builde
 
 	return builder
 }
+
+func (builder *Builder) Columns(columns []string) *Builder {
+	// builder.str.
+}
